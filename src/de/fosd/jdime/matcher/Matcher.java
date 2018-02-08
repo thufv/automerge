@@ -184,7 +184,7 @@ public class Matcher<T extends Artifact<T>> {
         }
 
         matchings.get(leftRoot, rightRoot).ifPresent(m ->
-            LOG.fine(() -> {
+            LOG.finer(() -> {
                 Revision lRev = leftRoot.getRevision();
                 Revision rRev = rightRoot.getRevision();
                 return String.format("Matched revision %s and %s with score %d", lRev, rRev, m.getScore());
@@ -197,12 +197,12 @@ public class Matcher<T extends Artifact<T>> {
             Revision lRev = leftRoot.getRevision();
             Revision rRev = rightRoot.getRevision();
             String msg = String.format("Dumping matching of %s and %s%n%s", lRev, rRev, matchings);
-            LOG.finest(msg);
+            LOG.finer(msg);
         }
 
         if (LOG.isLoggable(Level.FINE)) {
-            LOG.fine(String.format("%s.dumpTree():%n%s", leftRoot.getRevision(), leftRoot.dump(DumpMode.PLAINTEXT_TREE)));
-            LOG.fine(String.format("%s.dumpTree():%n%s", rightRoot.getRevision(), rightRoot.dump(DumpMode.PLAINTEXT_TREE)));
+            LOG.finer(String.format("%s.dumpTree():%n%s", leftRoot.getRevision(), leftRoot.dump(DumpMode.PLAINTEXT_TREE)));
+            LOG.finer(String.format("%s.dumpTree():%n%s", rightRoot.getRevision(), rightRoot.dump(DumpMode.PLAINTEXT_TREE)));
         }
 
         return matchings;

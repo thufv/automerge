@@ -328,7 +328,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
         if (isDirectory()) {
             getChildren().stream().filter(FileArtifact::isDirectory).forEach(FileArtifact::filterNonJavaFiles);
 
-            LOG.fine(() -> "Filtering out the children not representing java source code files from " + this);
+            LOG.finer(() -> "Filtering out the children not representing java source code files from " + this);
             modifyChildren(cs -> cs.removeIf(c -> c.isFile() && !c.isJavaFile() || c.isDirectory() && !c.hasChildren()));
         }
     }
@@ -594,8 +594,8 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public boolean matches(final FileArtifact other) {
 
         if (isDirectory() && isRoot() && other.isDirectory() && other.isRoot()) {
-            LOG.fine(() -> String.format("%s and %s are toplevel directories.", this, other));
-            LOG.fine("We assume a match here and continue to merge the contained files and directories.");
+            LOG.finer(() -> String.format("%s and %s are toplevel directories.", this, other));
+            LOG.finer("We assume a match here and continue to merge the contained files and directories.");
             return true;
         }
 
@@ -634,7 +634,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
             MergeScenario<FileArtifact> scenario = operation.getMergeScenario();
 
             if (!isJavaFile()) {
-                LOG.fine(() -> "Skipping non-java file " + this);
+                LOG.finer(() -> "Skipping non-java file " + this);
                 return;
             }
 

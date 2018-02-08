@@ -106,7 +106,7 @@ public class StructuredStrategy extends MergeStrategy<FileArtifact> {
 
         System.setSecurityManager(noExitManager);
 
-        LOG.fine(() -> String.format("Merging:%nLeft: %s%nBase: %s%nRight: %s", lPath, bPath, rPath));
+        LOG.info(() -> String.format("Merging:%nLeft: %s%nBase: %s%nRight: %s", lPath, bPath, rPath));
 
         try {
             Runtime parse = new Runtime(PARSE_LABEL);
@@ -150,8 +150,7 @@ public class StructuredStrategy extends MergeStrategy<FileArtifact> {
                 target.setContent(targetNode.prettyPrint());
             }
 
-            LOG.fine("Structured merge finished.");
-            LOG.fine(() -> String.format("%s merge time was %d ms.", getClass().getSimpleName(), merge.getTimeMS()));
+            LOG.info(() -> String.format("%s: merge time %d ms.", getClass().getSimpleName(), merge.getTimeMS()));
 
             if (!context.isDiffOnly()) {
                 LOG.finest(() -> String.format("Tree dump of target node:%n%s", targetNode.dump(PLAINTEXT_TREE)));
