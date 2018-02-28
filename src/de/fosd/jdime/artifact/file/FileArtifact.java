@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.artifact.file;
 
@@ -46,6 +46,7 @@ import java.util.stream.IntStream;
 
 import de.fosd.jdime.artifact.Artifact;
 import de.fosd.jdime.artifact.ArtifactList;
+import de.fosd.jdime.artifact.Artifacts;
 import de.fosd.jdime.artifact.ast.ASTNodeArtifact;
 import de.fosd.jdime.config.merge.MergeContext;
 import de.fosd.jdime.config.merge.MergeScenario;
@@ -90,6 +91,9 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * {@link Files#probeContentType(java.nio.file.Path)} fails.
      */
     private static final MimetypesFileTypeMap mimeMap;
+    public static final String CONFLICT_START = "<<<<<<<";
+    public static final String CONFLICT_DELIM = "=======";
+    public static final String CONFLICT_END = ">>>>>>>";
 
     static {
         mimeMap = new MimetypesFileTypeMap();
@@ -151,12 +155,9 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * directory then <code>FileArtifact</code>s representing its contents will be added as children to this
      * <code>FileArtifact</code>.
      *
-     * @param revision
-     *         the <code>Revision</code> the artifact belongs to
-     * @param file
-     *         the <code>File</code> in which the artifact is stored
-     * @throws IllegalArgumentException
-     *         if {@code file} does not exist
+     * @param revision the <code>Revision</code> the artifact belongs to
+     * @param file     the <code>File</code> in which the artifact is stored
+     * @throws IllegalArgumentException if {@code file} does not exist
      */
     public FileArtifact(Revision revision, File file) {
         this(revision, new AtomicInteger(0)::getAndIncrement, file, true);
@@ -165,15 +166,11 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Constructs a new <code>FileArtifact</code> representing the given <code>File</code>.
      *
-     * @param revision
-     *         the <code>Revision</code> the artifact belongs to
-     * @param file
-     *         the <code>File</code> in which the artifact is stored
-     * @param recursive
-     *         If <code>file</code> is a directory then <code>FileArtifact</code>s representing its contents will be
-     *         added as children to this <code>FileArtifact</code>.
-     * @throws IllegalArgumentException
-     *         if {@code file} does not exist
+     * @param revision  the <code>Revision</code> the artifact belongs to
+     * @param file      the <code>File</code> in which the artifact is stored
+     * @param recursive If <code>file</code> is a directory then <code>FileArtifact</code>s representing its contents will be
+     *                  added as children to this <code>FileArtifact</code>.
+     * @throws IllegalArgumentException if {@code file} does not exist
      */
     public FileArtifact(Revision revision, File file, boolean recursive) {
         this(revision, new AtomicInteger(0)::getAndIncrement, file, recursive);
@@ -184,17 +181,12 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * directory then <code>FileArtifact</code>s representing its contents will be added as children to this
      * <code>FileArtifact</code>.
      *
-     * @param revision
-     *         the <code>Revision</code> the artifact belongs to
-     * @param number
-     *         supplies first the number for this artifact and then in DFS order the number for its children
-     * @param file
-     *         the <code>File</code> in which the artifact is stored
-     * @param recursive
-     *         If <code>file</code> is a directory then <code>FileArtifact</code>s representing its contents will be
-     *         added as children to this <code>FileArtifact</code>.
-     * @throws IllegalArgumentException
-     *         if {@code file} does not exist
+     * @param revision  the <code>Revision</code> the artifact belongs to
+     * @param number    supplies first the number for this artifact and then in DFS order the number for its children
+     * @param file      the <code>File</code> in which the artifact is stored
+     * @param recursive If <code>file</code> is a directory then <code>FileArtifact</code>s representing its contents will be
+     *                  added as children to this <code>FileArtifact</code>.
+     * @throws IllegalArgumentException if {@code file} does not exist
      */
     private FileArtifact(Revision revision, Supplier<Integer> number, File file, boolean recursive) {
         super(revision, number.get());
@@ -226,11 +218,9 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * Constructs a new virtual {@link FileArtifact} representing a non-existent {@link File} with a generated name. The
      * new {@link FileArtifact} will always have the number 0.
      *
-     * @param revision
-     *         the {@link Revision} the artifact belongs to
-     * @param type
-     *         the virtual type for the {@link FileArtifact}, must be one of {@link FileType#FILE} or
-     *         {@link FileType#DIR}
+     * @param revision the {@link Revision} the artifact belongs to
+     * @param type     the virtual type for the {@link FileArtifact}, must be one of {@link FileType#FILE} or
+     *                 {@link FileType#DIR}
      */
     public FileArtifact(Revision revision, FileType type) {
         super(revision, 0);
@@ -262,8 +252,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Copies the given {@link FileArtifact} detached from its tree.
      *
-     * @param toCopy
-     *         the {@link FileArtifact} to copy
+     * @param toCopy the {@link FileArtifact} to copy
      * @see #copy()
      */
     private FileArtifact(FileArtifact toCopy) {
@@ -284,7 +273,10 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public void addChild(FileArtifact child) {
         super.addChild(child);
 
-        child.file = new File(file, child.file.getName());
+        for (FileArtifact node : Artifacts.dfsIterable(child)) {
+            node.file = new File(node.getParent().file, node.file.getName());
+        }
+
         modifyChildren(ch -> ch.sort(comp));
     }
 
@@ -343,7 +335,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     }
 
     /**
-     * Returns the MIME content type of the <code>File</code> in which this <code>FileArtifact</code> is stored. 
+     * Returns the MIME content type of the <code>File</code> in which this <code>FileArtifact</code> is stored.
      * If the content type can not be determined <code>null</code> will be returned.
      *
      * @return the MIME content type
@@ -359,11 +351,11 @@ public class FileArtifact extends Artifact<FileArtifact> {
         }
 
         if (mimeType == null) {
-            
+
             // returns application/octet-stream if the type can not be determined
             mimeType = mimeMap.getContentType(file);
-            
-            if ("application/octet-stream".equals(mimeType)) { 
+
+            if ("application/octet-stream".equals(mimeType)) {
                 mimeType = null;
             }
         }
@@ -376,8 +368,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * by this <code>FileArtifact</code>. If this <code>FileArtifact</code> does not represent a directory, an empty
      * list is returned.
      *
-     * @param number
-     *         the number <code>Supplier</code> to be passed to the new <code>FileArtifact</code>s
+     * @param number the number <code>Supplier</code> to be passed to the new <code>FileArtifact</code>s
      * @return <code>FileArtifacts</code> representing the children of this directory
      */
     private List<FileArtifact> getDirContent(Supplier<Integer> number) {
@@ -448,16 +439,11 @@ public class FileArtifact extends Artifact<FileArtifact> {
 
     @Override
     protected String hashId() {
-        return file.getName();
-    }
-
-    /**
-     * Returns the SHA256 hash of the content of this {@link FileArtifact} encoded in a hexadecimal {@link String}.
-     *
-     * @return the hexadecimal content hash
-     */
-    public String getContentHash() {
-        return DigestUtils.sha256Hex(getContent());
+        if (isFile()) {
+            return DigestUtils.sha256Hex(file.getName() + getContent());
+        } else {
+            return DigestUtils.sha256Hex(file.getName());
+        }
     }
 
     @Override
@@ -525,8 +511,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * <code>IOException</code> occurs getting the files the method will immediately return. If an
      * <code>IOException</code> occurs parsing a file to an <code>ASTNodeArtifact</code> it will be skipped.
      *
-     * @param cons
-     *         the <code>Consumer</code> to apply
+     * @param cons the <code>Consumer</code> to apply
      */
     private void forAllJavaFiles(Consumer<ASTNodeArtifact> cons) {
 
@@ -611,12 +596,12 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public void merge(MergeOperation<FileArtifact> operation, MergeContext context) {
         Objects.requireNonNull(operation, "operation must not be null!");
         Objects.requireNonNull(context, "context must not be null!");
-        
+
         if (!exists()) {
             String className = getClass().getSimpleName();
             String filePath = file.getAbsolutePath();
             String message = String.format("Trying to merge %s whose file %s does not exist.", className, filePath);
-            
+
             throw new RuntimeException(message);
         }
 
@@ -688,7 +673,53 @@ public class FileArtifact extends Artifact<FileArtifact> {
 
     @Override
     public FileArtifact createConflictArtifact(FileArtifact left, FileArtifact right) {
-        throw new NotYetImplementedException();
+        // This is not a conflict introduced by concurrent modification of content,
+        // but by deleting and changing a file (insertion-deletion conflict on file/directory level)
+
+        FileArtifact deleted = left != null ? left : right;
+        assert deleted != null;
+
+        if (deleted.isFile()) {
+            FileArtifact conflict = new FileArtifact(deleted);
+
+            StringBuilder content = new StringBuilder();
+            content.append(CONFLICT_START);
+            if (deleted == left) {
+                content.append(" ").append(deleted.getRevision());
+            }
+            if (deleted == left) {
+                content.append(System.lineSeparator()).append(deleted.content);
+            }
+            content.append(System.lineSeparator()).append(CONFLICT_DELIM);
+            if (deleted == right) {
+                content.append(System.lineSeparator()).append(deleted.content);
+            }
+            content.append(System.lineSeparator()).append(CONFLICT_END);
+            if (deleted == right) {
+                content.append(" ").append(deleted.getRevision());
+            }
+            content.append(System.lineSeparator());
+
+            conflict.setContent(content.toString());
+
+            return conflict;
+        } else if (deleted.isDirectory()) {
+            FileArtifact conflict = new FileArtifact(deleted);
+
+            for (FileArtifact child : deleted.getChildren()) {
+                if (deleted == left) {
+                    conflict.addChild(createConflictArtifact(child, null));
+                } else if (deleted == right) {
+                    conflict.addChild(createConflictArtifact(null, child));
+                } else {
+                    throw new RuntimeException("Both sides of conflict are null");
+                }
+            }
+
+            return conflict;
+        } else {
+            throw new RuntimeException("FileArtifact " + deleted + " is neither file nor directory.");
+        }
     }
 
     @Override
@@ -700,8 +731,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * Outputs the contents represented by this {@link FileArtifact} and its children using the given
      * {@link PrintStream}.
      *
-     * @param to
-     *         the {@link PrintStream} to write to
+     * @param to the {@link PrintStream} to write to
      */
     public void outputContent(PrintStream to) {
 
@@ -718,8 +748,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Recursively (over)writes the contents of this {@link FileArtifact} and its children to the files they represent.
      *
-     * @throws IOException
-     *         if there is an exception accessing the filesystem
+     * @throws IOException if there is an exception accessing the filesystem
      */
     public void writeContent() throws IOException {
 
@@ -743,8 +772,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Writes the {@link #content} of this {@link FileArtifact} to its {@link #file}.
      *
-     * @throws IOException
-     *         see {@link FileUtils#openOutputStream(File)}
+     * @throws IOException see {@link FileUtils#openOutputStream(File)}
      */
     private void writeToFile() throws IOException {
         try (OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(file), UTF_8)) {
@@ -755,8 +783,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Copies the {@link #original} to the {@link #file} of this {@link FileArtifact}.
      *
-     * @throws IOException
-     *         see {@link FileUtils#copyFile(File, File)}
+     * @throws IOException see {@link FileUtils#copyFile(File, File)}
      */
     private void copyFile() throws IOException {
         if (!Files.isSameFile(original.toPath(), file.toPath())) {
@@ -767,8 +794,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     /**
      * Creates an empty version of the {@link #file} on disk.
      *
-     * @throws IOException
-     *         see {@link FileUtils#touch(File)}
+     * @throws IOException see {@link FileUtils#touch(File)}
      */
     private void touchFile() throws IOException {
         FileUtils.touch(file);
@@ -813,8 +839,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
      * Sets the content this {@link FileArtifact} represents to the new value. If this {@link FileArtifact} represents
      * a directory, the call is ignored.
      *
-     * @param content
-     *         the new content
+     * @param content the new content
      */
     public void setContent(String content) {
 
