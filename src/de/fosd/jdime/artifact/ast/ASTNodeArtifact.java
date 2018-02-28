@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.artifact.ast;
 
@@ -62,7 +62,6 @@ import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
 
 /**
  * @author Olaf Lessenich
- *
  */
 public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
@@ -72,8 +71,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Parses the content of the given <code>FileArtifact</code> to an AST. If the <code>artifact</code> is empty,
      * an empty <code>ASTNode</code> obtained via {@link ASTNode#ASTNode()} will be returned.
      *
-     * @param artifact
-     *         the <code>FileArtifact</code> to parse
+     * @param artifact the <code>FileArtifact</code> to parse
      * @return the root of the resulting AST
      */
     private static ASTNode<?> parse(FileArtifact artifact) {
@@ -105,8 +103,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Constructs a new <code>ASTNodeArtifact</code> (tree) representing the AST of the code in <code>artifact</code>.
      * All members of the tree will be in the same <code>Revision</code> as <code>artifact</code>.
      *
-     * @param artifact
-     *         the <code>FileArtifact</code> containing the code to be parsed
+     * @param artifact the <code>FileArtifact</code> containing the code to be parsed
      */
     public ASTNodeArtifact(FileArtifact artifact) {
         this(artifact.getRevision(), new AtomicInteger()::getAndIncrement, parse(artifact));
@@ -116,8 +113,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Constructs a new <code>ASTNodeArtifact</code> encapsulating an empty <code>ASTNode</code> obtained via
      * {@link ASTNode#ASTNode()}.
      *
-     * @param revision
-     *         the <code>Revision</code> for this <code>ASTNodeArtifact</code>
+     * @param revision the <code>Revision</code> for this <code>ASTNodeArtifact</code>
      */
     protected ASTNodeArtifact(Revision revision) {
         this(revision, new AtomicInteger()::getAndIncrement, new ASTNode<>());
@@ -127,10 +123,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Constructs a new <code>ASTNodeArtifact</code> encapsulating the given <code>ASTNode</code>. Children
      * <code>ASTNodeArtifact</code>s for all the children of <code>astNode</code> will be added.
      *
-     * @param revision
-     *         the <code>Revision</code> for this <code>ASTNodeArtifact</code>
-     * @param astNode
-     *         the <code>ASTNode</code> to encapsulate
+     * @param revision the <code>Revision</code> for this <code>ASTNodeArtifact</code>
+     * @param astNode  the <code>ASTNode</code> to encapsulate
      */
     private ASTNodeArtifact(Revision revision, ASTNode<?> astNode) {
         this(revision, new AtomicInteger()::getAndIncrement, astNode);
@@ -140,12 +134,9 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Constructs a new <code>ASTNodeArtifact</code> encapsulating the given <code>ASTNode</code>. Children
      * <code>ASTNodeArtifact</code>s for all the children of <code>astNode</code> will be added.
      *
-     * @param revision
-     *         the <code>Revision</code> for this <code>ASTNodeArtifact</code>
-     * @param number
-     *         supplies first the number for this artifact and then in DFS order the number for its children
-     * @param astNode
-     *         the <code>ASTNode</code> to encapsulate
+     * @param revision the <code>Revision</code> for this <code>ASTNodeArtifact</code>
+     * @param number   supplies first the number for this artifact and then in DFS order the number for its children
+     * @param astNode  the <code>ASTNode</code> to encapsulate
      */
     private ASTNodeArtifact(Revision revision, Supplier<Integer> number, ASTNode<?> astNode) {
         super(revision, number.get());
@@ -157,8 +148,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Copies the given {@link Artifact}.
      *
-     * @param toCopy
-     *         to {@link Artifact} to copy
+     * @param toCopy to {@link Artifact} to copy
      * @see #copy()
      */
     protected ASTNodeArtifact(ASTNodeArtifact toCopy) {
@@ -174,8 +164,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Adds {@code ASTNodeArtifact} children to this artifact encapsulating the children of the {@link #astnode}.
      *
-     * @param number
-     *         supplies the numbers for the added children
+     * @param number supplies the numbers for the added children
      */
     private void initializeChildren(Supplier<Integer> number) {
         List<ASTNodeArtifact> children = new ArtifactList<>();
@@ -264,7 +253,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             return KeyEnums.Type.METHOD;
         } else if (isClass()) {
             return KeyEnums.Type.CLASS;
-        } else if (astnode instanceof TryStmt){
+        } else if (astnode instanceof TryStmt) {
             return KeyEnums.Type.TRY;
         } else if (astnode instanceof Block) {
             return KeyEnums.Type.BLOCK;
@@ -351,8 +340,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Optionally returns the {@link ASTNodeArtifact} wrapping the given {@link ASTNode} from the
      * {@link ASTNodeArtifact} tree rooted in this {@link ASTNodeArtifact}.
      *
-     * @param node
-     *         the {@link ASTNode} whose corresponding {@link ASTNodeArtifact} is to be found
+     * @param node the {@link ASTNode} whose corresponding {@link ASTNodeArtifact} is to be found
      * @return optionally the {@link ASTNodeArtifact} containing the given {@link ASTNode}
      */
     public Optional<ASTNodeArtifact> findWrappingASTNodeArtifact(ASTNode<?> node) {
@@ -362,7 +350,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     @Override
     public Optional<Supplier<String>> getUniqueLabel() {
         boolean hasLabel = ImportDecl.class.isAssignableFrom(astnode.getClass())
-                            || Literal.class.isAssignableFrom(astnode.getClass());
+                || Literal.class.isAssignableFrom(astnode.getClass());
 
         return hasLabel ? Optional.of(() -> astnode.getMatchingRepresentation()) : Optional.empty();
     }
@@ -385,8 +373,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Returns whether a node matches another node.
      *
-     * @param other
-     *            node to compare with.
+     * @param other node to compare with.
      * @return true if the node matches another node.
      */
     @Override
@@ -481,8 +468,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Removes a child.
      *
-     * @param child
-     *            child that should be removed
+     * @param child child that should be removed
      */
     private void removeChild(final ASTNodeArtifact child) {
         LOG.finest(() -> String.format("[%s] Removing child %s", getId(), child.getId()));
@@ -549,9 +535,9 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
         if (!isVirtual() && hasFixedNumberOfChildren() && getNumChildren() != astnode.getNumChildNoTransform()) {
             String msg = String.format("The %s requires a fixed number of children. JDime children: %d ExtendJ " +
-                                       "children: %d after AST rebuild. This is either a bug in ExtendJ or in JDime! " +
-                                       "Inspect AST element %s", astnode.getClass(), getNumChildren(),
-                                                                 astnode.getNumChildNoTransform(), getId());
+                            "children: %d after AST rebuild. This is either a bug in ExtendJ or in JDime! " +
+                            "Inspect AST element %s", astnode.getClass(), getNumChildren(),
+                    astnode.getNumChildNoTransform(), getId());
             throw new AbortException(msg);
         }
     }
@@ -559,6 +545,17 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     @Override
     public final String toString() {
         return astnode.getMatchingRepresentation();
+    }
+
+    /**
+     * Check if this ASTNode is of type `List`.
+     *
+     * @return whether it is of type `List`
+     * @author paul
+     */
+    @Override
+    public boolean isList() {
+        return getASTNode() instanceof org.extendj.ast.List;
     }
 
     @Override

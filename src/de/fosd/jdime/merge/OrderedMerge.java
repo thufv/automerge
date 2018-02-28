@@ -1,65 +1,281 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.merge;
+
+import de.fosd.jdime.artifact.Artifact;
+import de.fosd.jdime.artifact.ArtifactList;
+import de.fosd.jdime.config.merge.MergeContext;
+import de.fosd.jdime.config.merge.MergeScenario;
+import de.fosd.jdime.config.merge.MergeType;
+import de.fosd.jdime.config.merge.Revision;
+import de.fosd.jdime.operations.AddOperation;
+import de.fosd.jdime.operations.ConflictOperation;
+import de.fosd.jdime.operations.MergeOperation;
+import javafx.util.Pair;
 
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import de.fosd.jdime.artifact.Artifact;
-import de.fosd.jdime.config.merge.MergeContext;
-import de.fosd.jdime.config.merge.MergeScenario;
-import de.fosd.jdime.config.merge.MergeType;
-import de.fosd.jdime.config.merge.Revision;
-import de.fosd.jdime.matcher.matching.Matching;
-import de.fosd.jdime.operations.AddOperation;
-import de.fosd.jdime.operations.ConflictOperation;
-import de.fosd.jdime.operations.DeleteOperation;
-import de.fosd.jdime.operations.MergeOperation;
-import de.fosd.jdime.strdump.DumpMode;
-
-import static de.fosd.jdime.artifact.Artifacts.copyTree;
-import static de.fosd.jdime.artifact.Artifacts.root;
 import static de.fosd.jdime.config.merge.MergeScenario.BASE;
 
-/**
- * @author Olaf Lessenich
- *
- * @param <T>
- *            type of artifact
- */
 public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
-
     private static final Logger LOG = Logger.getLogger(OrderedMerge.class.getCanonicalName());
+    private static final Level LOG_LEVEL = Level.FINE;
+
     private String logprefix;
 
-    /**
-     * TODO: this needs high-level documentation. Probably also detailed documentation.
-     *
-     * @param operation the <code>MergeOperation</code> to perform
-     * @param context the <code>MergeContext</code>
-     */
+    public Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> split(T pivot, ArtifactList<T> list) {
+        ArtifactList<T> up = new ArtifactList<>();
+        ArtifactList<T> down = new ArtifactList<>();
+        Iterator<T> iter = list.iterator();
+
+        T elem;
+        T best = null;
+        int bestScore = 0;
+
+        while (iter.hasNext()) {
+            elem = iter.next();
+            int score = elem.matchScoreWith(pivot);
+            if (score > bestScore) {
+                bestScore = score;
+                best = elem;
+            } else {
+                up.add(elem);
+            }
+        }
+        if (best != null) {
+            LOG.log(LOG_LEVEL, "matched: " + best);
+        }
+        while (iter.hasNext()) {
+            elem = iter.next();
+            down.add(elem);
+        }
+
+        return new Pair<>(new Pair<>(up, down), best);
+    }
+
+    public ArtifactList<T> merge2(ArtifactList<T> left, ArtifactList<T> right, Revision l, Revision r,
+                                  T target, MergeContext context, boolean reversed) {
+        if (LOG.isLoggable(LOG_LEVEL)) {
+            LOG.log(LOG_LEVEL, "merge2:");
+            System.out.println(String.format("left: %s\nright: %s", left, right));
+        }
+
+        if (left.isEmpty()) {
+            LOG.log(LOG_LEVEL, "merge2: left is empty");
+            return right;
+        }
+
+        T pivot = left.head();
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> p = split(pivot, right);
+        left.dropHead();
+
+        T matched = p.getValue();
+        if (matched == null) {
+            LOG.log(LOG_LEVEL, "merge2: right is NOT matched with " + pivot);
+
+            AddOperation<T> addOp = new AddOperation<>(pivot, target, l.getName());
+            pivot.setMerged();
+            addOp.apply(context);
+
+            LOG.log(LOG_LEVEL, "merge2: add: " + pivot);
+
+            return merge2(left, right, l, r, target, context, reversed);
+        }
+
+        LOG.log(LOG_LEVEL, "merge2: right is matched with " + pivot);
+
+        ArtifactList<T> right1 = p.getKey().getKey();
+        for (T rightChild : right1) {
+            AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
+            rightChild.setMerged();
+            addOp.apply(context);
+
+            LOG.log(LOG_LEVEL, "merge2: add: " + rightChild);
+        }
+
+        LOG.log(LOG_LEVEL, "normally 2-way merge: " + pivot + " <-> " + matched);
+        // merge (pivot, matched)
+        T leftT = !reversed ? pivot : matched;
+        T rightT = !reversed ? matched : pivot;
+        T empty = leftT.createEmptyArtifact(BASE);
+        String leftName = !reversed ? l.getName() : r.getName();
+        String rightName = !reversed ? r.getName() : l.getName();
+
+        MergeScenario<T> childTriple = new MergeScenario<>(MergeType.TWOWAY, leftT, empty, rightT);
+        T targetChild = leftT.copy();
+        target.addChild(targetChild);
+        if (targetChild != null) {
+            assert targetChild.exists();
+            targetChild.clearChildren();
+        }
+
+        MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
+        leftT.setMerged();
+        rightT.setMerged();
+        mergeOp.apply(context);
+        // done
+
+        ArtifactList<T> right2 = p.getKey().getValue();
+        return merge2(left, right2, l, r, target, context, reversed);
+    }
+
+    public ArtifactList<T> merge3(ArtifactList<T> base, ArtifactList<T> left, ArtifactList<T> right,
+                                  Revision l, Revision r, T target, MergeContext context, boolean reversed) {
+        if (LOG.isLoggable(LOG_LEVEL)) {
+            LOG.log(LOG_LEVEL, "merge3:");
+            System.out.println(String.format("base: %s\nleft: %s\nright: %s", base, left, right));
+        }
+
+        if (base.isEmpty()) {
+            return merge2(left, right, l, r, target, context, reversed);
+        }
+
+        T pivot = base.head();
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pl = split(pivot, left);
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(pivot, right);
+        base.dropHead();
+
+        T matchedLeft = pl.getValue();
+        T matchedRight = pr.getValue();
+        if (matchedLeft == null && matchedRight == null) {
+            LOG.log(LOG_LEVEL, "merge3: left, right are both NOT matched with " + pivot);
+            return merge3(base, left, right, l, r, target, context, reversed);
+        }
+
+        ArtifactList<T> left1 = pl.getKey().getKey();
+        ArtifactList<T> left2 = pl.getKey().getValue();
+        ArtifactList<T> right1 = pr.getKey().getKey();
+        ArtifactList<T> right2 = pr.getKey().getValue();
+        Revision b = pivot.getRevision();
+
+        if (matchedLeft != null && matchedRight != null && (
+                (matchedLeft.hasMatching(matchedRight) && matchedRight.hasMatching(matchedLeft))
+                        || !matchedLeft.hasChanges(b) || !matchedRight.hasChanges(b)
+        )) {
+            // NOTE: even if left is matched with base, and right is matched with base,
+            // it is possible that left and right are NOT matched with each other.
+            // Therefore, we have to check if left and right are matched with each other,
+            // or, either left or right is exactly the same with base.
+            // Otherwise, (pivot, matchedLeft, matchedRight) can NOT become a proper merge triple,
+            // and we have to ignore `matchedRight`.
+
+            LOG.log(LOG_LEVEL, "merge3: left, right are both matched with " + pivot);
+
+            ArtifactList<T> rightRest = merge2(left1, right1, l, r, target, context, reversed);
+
+            // add rightRest
+            for (T rightChild : rightRest) {
+                AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
+                rightChild.setMerged();
+                addOp.apply(context);
+
+                LOG.log(LOG_LEVEL, "merge3: add: " + rightChild);
+            }
+
+            LOG.log(LOG_LEVEL, "normally 3-way merge: " + matchedLeft + " <-> " + matchedRight);
+            // merge (pivot, matchedLeft, matchedRight)
+            T leftT = !reversed ? matchedLeft : matchedRight;
+            T rightT = !reversed ? matchedRight : matchedLeft;
+            String leftName = !reversed ? l.getName() : r.getName();
+            String rightName = !reversed ? r.getName() : l.getName();
+
+            MergeScenario<T> childTriple = new MergeScenario<>(MergeType.THREEWAY, leftT, pivot, rightT);
+            T targetChild = leftT.copy();
+            target.addChild(targetChild);
+            if (targetChild != null) {
+                assert targetChild.exists();
+                targetChild.clearChildren();
+            }
+
+            MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
+            leftT.setMerged();
+            rightT.setMerged();
+            mergeOp.apply(context);
+            // done
+
+            return merge3(base, left2, right2, l, r, target, context, reversed);
+        }
+
+        if (matchedLeft != null) {
+            LOG.log(LOG_LEVEL, "merge3: only left is matched with " + pivot);
+            // Either `matchedRight == null` or (`matchedRight != null` but
+            // `matchedLeft.hasMatching(matchedRight) && matchedRight.hasMatching(matchedLeft)`).
+            // No matter which one is hold, the whole `right` is remained to be matched.
+
+            return merge3Helper(pivot, matchedLeft, base, left1, left2, right, l, r, target, context, reversed);
+        }
+
+        LOG.log(LOG_LEVEL, "merge3: only right is matched with " + pivot);
+        assert left2.isEmpty();
+        return merge3Helper(pivot, matchedRight, base, right1, right2, left1, r, l, target, context, !reversed);
+    }
+
+    public ArtifactList<T> merge3Helper(T pivot, T matchedLeft, ArtifactList<T> baseRest,
+                                        ArtifactList<T> left1, ArtifactList<T> left2, ArtifactList<T> right,
+                                        Revision l, Revision r, T target, MergeContext context, boolean reversed) {
+        ArtifactList<T> rightRest = merge2(left1, right, l, r, target, context, reversed);
+
+        if (matchedLeft.hasChanges(pivot.getRevision())) {
+            LOG.log(LOG_LEVEL, "merge3: conflict: " + matchedLeft);
+
+            // conflict (pivot, matchedLeft, ???)
+            if (baseRest.isEmpty() && left2.isEmpty()) { // ??? = `rightRest`
+                T leftT = target.copy();
+                leftT.setRevision(l.concat("tmp"));
+                leftT.clearChildren();
+                leftT.addChild(matchedLeft);
+
+                T rightT = target.copy();
+                rightT.setRevision(r.concat("tmp"));
+                rightT.clearChildren(); // also reset astnode's children to avoid recursive conflict children
+                rightT.setChildren(rightRest);
+
+                ConflictOperation<T> conflictOp = !reversed ?
+                        new ConflictOperation<>(leftT, rightT, target, l.getName(), r.getName()) :
+                        new ConflictOperation<>(rightT, leftT, target, r.getName(), l.getName());
+                conflictOp.apply(context);
+
+                return baseRest;
+            }
+
+            // ??? = empty
+            T rightT = matchedLeft.createEmptyArtifact(r);
+
+            ConflictOperation<T> conflictOp = !reversed ?
+                    new ConflictOperation<>(matchedLeft, rightT, target, l.getName(), r.getName()) :
+                    new ConflictOperation<>(rightT, matchedLeft, target, r.getName(), l.getName());
+            conflictOp.apply(context);
+
+            return merge3(baseRest, left2, rightRest, l, r, target, context, reversed);
+        }
+
+        LOG.log(LOG_LEVEL, "merge3 helper: no conflict: " + matchedLeft);
+        return merge3(baseRest, left2, rightRest, l, r, target, context, reversed);
+    }
+
     @Override
     public void merge(MergeOperation<T> operation, MergeContext context) {
         MergeScenario<T> triple = operation.getMergeScenario();
@@ -67,7 +283,10 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         T base = triple.getBase();
         T right = triple.getRight();
         T target = operation.getTarget();
-        logprefix = operation.getId() + " - ";
+
+        target.clearChildren();
+
+        this.logprefix = operation.getId() + " - ";
 
         assert (left.matches(right));
         assert (left.hasMatching(right)) && right.hasMatching(left);
@@ -78,289 +297,53 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         });
 
         Revision l = left.getRevision();
-        Revision b = base.getRevision();
         Revision r = right.getRevision();
-        Iterator<T> leftIt = left.getChildren().iterator();
-        Iterator<T> rightIt = right.getChildren().iterator();
 
-        boolean leftdone = false;
-        boolean rightdone = false;
-        T leftChild = null;
-        T rightChild = null;
+        ArtifactList<T> leftChildren = left.getChildrenAsArtifactList();
+        ArtifactList<T> rightChildren = right.getChildrenAsArtifactList();
+        ArtifactList<T> baseChildren = base.getChildrenAsArtifactList();
 
-        if (leftIt.hasNext()) {
-            leftChild = leftIt.next();
-        } else {
-            leftdone = true;
+        if (leftChildren.size() == 1 && rightChildren.size() == 1 && baseChildren.size() <= 1) {
+            T leftChild = leftChildren.head();
+            T rightChild = rightChildren.head();
+
+            // trivially 2-way merge if baseChildren.size() == 0
+            MergeType childType = MergeType.TWOWAY;
+            T baseChild = leftChild.createEmptyArtifact(BASE);
+
+            if (baseChildren.size() == 1) { // trivially 3-way merge
+                childType = MergeType.THREEWAY;
+                baseChild = baseChildren.head();
+            }
+
+            T targetChild = leftChild.copy();
+            target.addChild(targetChild);
+            if (targetChild != null) {
+                assert targetChild.exists();
+                targetChild.clearChildren();
+            }
+
+            LOG.log(LOG_LEVEL, "trivially ordered merge: " + leftChild + " <-> " + rightChild);
+            MergeScenario<T> childTriple = new MergeScenario<>(childType,
+                    leftChild, baseChild, rightChild);
+            MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
+            leftChild.setMerged();
+            rightChild.setMerged();
+            mergeOp.apply(context);
+            return;
         }
-        if (rightIt.hasNext()) {
-            rightChild = rightIt.next();
-        } else {
-            rightdone = true;
-        }
 
-        while (!leftdone || !rightdone) {
-            if (!leftdone && !r.contains(leftChild)) {
-                assert (leftChild != null);
-                final T finalLeftChild = leftChild;
-                final T finalRightChild = rightChild;
+        ArtifactList<T> rightRest = merge3(baseChildren, leftChildren, rightChildren,
+                l, r, target, context, false);
+        LOG.log(LOG_LEVEL, "ordered merge: returned");
 
-                LOG.finest(() -> String.format("%s is not in right", prefix(finalLeftChild)));
+        // add rightRest
+        for (T rightChild : rightRest) {
+            AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
+            rightChild.setMerged();
+            addOp.apply(context);
 
-                if (b != null && b.contains(leftChild)) {
-                    LOG.finest(() -> String.format("%s was deleted by right", prefix(finalLeftChild)));
-
-                    // was deleted in right
-                    if (leftChild.hasChanges(b)) {
-                        // insertion-deletion-conflict
-                        if (LOG.isLoggable(Level.FINEST)) {
-                            LOG.finest(prefix(leftChild) + "has changes in subtree.");
-                        }
-                        ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                leftChild, rightChild, target, l.getName(), r.getName());
-                        conflictOp.apply(context);
-                        if (rightIt.hasNext()) {
-                            rightChild = rightIt.next();
-                        } else {
-                            rightdone = true;
-                        }
-                        if (leftIt.hasNext()) {
-                            leftChild = leftIt.next();
-                        } else {
-                            leftdone = true;
-                        }
-                    } else {
-                        // can be safely deleted
-                        DeleteOperation<T> delOp = new DeleteOperation<>(leftChild, target, l.getName());
-                        delOp.apply(context);
-                    }
-                } else {
-                    LOG.finest(() -> String.format("%s is a change", prefix(finalLeftChild)));
-
-                    // leftChild is a change
-                    if (!rightdone && !l.contains(rightChild)) {
-                        assert (rightChild != null);
-                        LOG.finest(() -> String.format("%s is not in left", prefix(finalRightChild)));
-
-                        if (b != null && b.contains(rightChild)) {
-                            LOG.finest(() -> String.format("%s was deleted by left", prefix(finalRightChild)));
-
-                            // rightChild was deleted in left
-                            if (rightChild.hasChanges(b)) {
-                                LOG.finest(() -> String.format("%s has changes in subtree.", prefix(finalRightChild)));
-
-                                // deletion-insertion conflict
-                                ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                        leftChild, rightChild, target, l.getName(), r.getName());
-                                conflictOp.apply(context);
-                                if (rightIt.hasNext()) {
-                                    rightChild = rightIt.next();
-                                } else {
-                                    rightdone = true;
-                                }
-                                if (leftIt.hasNext()) {
-                                    leftChild = leftIt.next();
-                                } else {
-                                    leftdone = true;
-                                }
-                            } else {
-                                // add the left change
-                                AddOperation<T> addOp = new AddOperation<>(copyTree(leftChild), target, l.getName());
-                                leftChild.setMerged();
-                                addOp.apply(context);
-                            }
-                        } else {
-                            LOG.finest(() -> String.format("%s is a change", prefix(finalRightChild)));
-
-                            // rightChild is a change
-                            ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                    leftChild, rightChild, target, l.getName(), r.getName());
-                            conflictOp.apply(context);
-
-                            if (rightIt.hasNext()) {
-                                rightChild = rightIt.next();
-                            } else {
-                                rightdone = true;
-                            }
-                        }
-                    } else {
-                        LOG.finest(() -> String.format("%s adding change", prefix(finalLeftChild)));
-
-                        // add the left change
-                        AddOperation<T> addOp = new AddOperation<>(copyTree(leftChild), target, l.getName());
-                        leftChild.setMerged();
-                        addOp.apply(context);
-                    }
-                }
-
-                if (leftIt.hasNext()) {
-                    leftChild = leftIt.next();
-                } else {
-                    leftdone = true;
-                }
-            }
-
-            if (!rightdone && !l.contains(rightChild)) {
-                assert (rightChild != null);
-                final T finalLeftChild = leftChild;
-                final T finalRightChild = rightChild;
-
-                LOG.finest(() -> String.format("%s is not in left", prefix(finalRightChild)));
-
-                if (b != null && b.contains(rightChild)) {
-                    LOG.finest(() -> String.format("%s was deleted by left", prefix(finalRightChild)));
-
-                    // was deleted in left
-                    if (rightChild.hasChanges(b)) {
-                        LOG.finest(() -> String.format("%s has changes in subtree.", prefix(finalRightChild)));
-
-                        // insertion-deletion-conflict
-                        ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                leftChild, rightChild, target, l.getName(), r.getName());
-                        conflictOp.apply(context);
-                        if (rightIt.hasNext()) {
-                            rightChild = rightIt.next();
-                        } else {
-                            rightdone = true;
-                        }
-                        if (leftIt.hasNext()) {
-                            leftChild = leftIt.next();
-                        } else {
-                            leftdone = true;
-                        }
-                    } else {
-                        // can be safely deleted
-                        DeleteOperation<T> delOp = new DeleteOperation<>(rightChild, target, r.getName());
-                        delOp.apply(context);
-                    }
-                } else {
-                    LOG.finest(() -> String.format("%s is a change", prefix(finalRightChild)));
-
-                    // rightChild is a change
-                    if (!leftdone && !r.contains(leftChild)) {
-                        assert (leftChild != null);
-                        LOG.finest(() -> String.format("%s is not in right", prefix(finalLeftChild)));
-
-                        if (b != null && b.contains(leftChild)) {
-                            LOG.finest(() -> String.format("%s was deleted by right", prefix(finalLeftChild)));
-
-                            if (leftChild.hasChanges(b)) {
-                                LOG.finest(() -> String.format("%s has changes in subtree", prefix(finalLeftChild)));
-
-                                // deletion-insertion conflict
-                                ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                        leftChild, rightChild, target, l.getName(), r.getName());
-                                conflictOp.apply(context);
-                                if (rightIt.hasNext()) {
-                                    rightChild = rightIt.next();
-                                } else {
-                                    rightdone = true;
-                                }
-                                if (leftIt.hasNext()) {
-                                    leftChild = leftIt.next();
-                                } else {
-                                    leftdone = true;
-                                }
-                            } else {
-                                LOG.finest(() -> String.format("%s adding change", prefix(finalRightChild)));
-
-                                // add the right change
-                                AddOperation<T> addOp = new AddOperation<>(copyTree(rightChild), target, r.getName());
-                                rightChild.setMerged();
-                                addOp.apply(context);
-                            }
-                        } else {
-                            LOG.finest(() -> String.format("%s is a change", prefix(finalLeftChild)));
-
-                            // leftChild is a change
-                            ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                    leftChild, rightChild, target, l.getName(), r.getName());
-                            conflictOp.apply(context);
-
-                            if (leftIt.hasNext()) {
-                                leftChild = leftIt.next();
-                            } else {
-                                leftdone = true;
-                            }
-                        }
-                    } else {
-                        LOG.finest(() -> String.format("%s adding change", prefix(finalRightChild)));
-
-                        // add the right change
-                        AddOperation<T> addOp = new AddOperation<>(copyTree(rightChild), target, r.getName());
-                        rightChild.setMerged();
-                        addOp.apply(context);
-                    }
-                }
-
-                if (rightIt.hasNext()) {
-                    rightChild = rightIt.next();
-                } else {
-                    rightdone = true;
-                }
-
-            } else if (l.contains(rightChild) && r.contains(leftChild)) {
-                assert (leftChild != null);
-                assert (rightChild != null);
-
-                // left and right have the artifact. merge it.
-                if (LOG.isLoggable(Level.FINEST)) {
-                    LOG.finest(prefix(leftChild) + "is in both revisions [" + rightChild.getId() + "]");
-                }
-
-                // leftChild is a choice node
-                if (leftChild.isChoice()) {
-                    T matchedVariant = rightChild.getMatching(l).getMatchingArtifact(rightChild);
-                    leftChild.addVariant(r.getName(), matchedVariant);
-                    AddOperation<T> addOp = new AddOperation<>(leftChild, target, null);
-                    leftChild.setMerged();
-                    rightChild.setMerged();
-                    addOp.apply(context);
-                } else {
-                    assert (leftChild.hasMatching(rightChild) && rightChild.hasMatching(leftChild));
-                }
-
-                if (!leftChild.isMerged() && !rightChild.isMerged()) {
-                    // determine whether the child is 2 or 3-way merged
-                    Matching<T> mBase = leftChild.getMatching(b);
-
-                    MergeType childType = mBase == null ? MergeType.TWOWAY
-                            : MergeType.THREEWAY;
-                    T baseChild = mBase == null ? leftChild.createEmptyArtifact(BASE)
-                            : mBase.getMatchingArtifact(leftChild);
-
-                    T targetChild = leftChild.copy();
-                    target.addChild(targetChild);
-
-                    MergeScenario<T> childTriple = new MergeScenario<>(childType,
-                            leftChild, baseChild, rightChild);
-
-                    MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
-
-                    leftChild.setMerged();
-                    rightChild.setMerged();
-                    mergeOp.apply(context);
-                }
-
-                if (leftIt.hasNext()) {
-                    leftChild = leftIt.next();
-                } else {
-                    leftdone = true;
-                }
-
-                if (rightIt.hasNext()) {
-                    rightChild = rightIt.next();
-                } else {
-                    rightdone = true;
-                }
-            }
-
-            if (!context.isDiffOnly()) {
-                LOG.finest(() -> {
-                    String dump = root(target).dump(DumpMode.PLAINTEXT_TREE);
-                    return String.format("%s target.dumpTree() after processing child:%n%s", prefix(), dump);
-                });
-            }
+            LOG.log(LOG_LEVEL, "ordered merge: add: " + rightChild);
         }
     }
 
@@ -376,8 +359,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
     /**
      * Returns the logging prefix.
      *
-     * @param artifact
-     *            artifact that is subject of the logging
+     * @param artifact artifact that is subject of the logging
      * @return logging prefix
      */
     private String prefix(T artifact) {

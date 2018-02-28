@@ -79,4 +79,25 @@ public class ArtifactList<E extends Artifact<E>> extends ArrayList<E> {
     private String toString(String separator) {
         return String.join(separator, stream().map(E::getId).collect(Collectors.toList()));
     }
+
+    /**
+     * Fetch the head (first) element.
+     *
+     * @author paul
+     * @return the head element.
+     */
+    public E head() {
+        assert !isEmpty();
+        return get(0);
+    }
+
+    /**
+     * Remove the head element.
+     *
+     * @author paul
+     */
+    public void dropHead() {
+        assert !isEmpty();
+        remove(0);
+    }
 }
