@@ -153,7 +153,7 @@ public class StructuredStrategy extends MergeStrategy<FileArtifact> {
             LOG.info(() -> String.format("%s: merge time %d ms.", getClass().getSimpleName(), merge.getTimeMS()));
 
             if (!context.isDiffOnly()) {
-                LOG.finest(() -> String.format("Tree dump of target node:%n%s", targetNode.dump(PLAINTEXT_TREE)));
+                LOG.fine(() -> String.format("Tree dump of target node:%n%s", targetNode.dump(PLAINTEXT_TREE)));
             }
 
             ASTNodeArtifact finalLeft = left;

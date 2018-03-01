@@ -76,6 +76,13 @@ public class CommandLineConfigSource extends ConfigSource {
     public static final String CLI_CM_FIX_PERCENTAGE = "cmfix";
     public static final String CLI_CM_SEED = "cmseed";
 
+    /**
+     * Expected artifact.
+     *
+     * @author paul
+     */
+    public static final String CLI_EXPECTED = "e";
+
     public static final String ARG_LIST = "ARG_LIST";
     public static final String ARG_LIST_SEP = ",";
 
@@ -349,6 +356,13 @@ public class CommandLineConfigSource extends ConfigSource {
 
         options.addOption(o);
 
+        o = Option.builder(CLI_EXPECTED)
+                .longOpt("expected")
+                .desc("Expected artifact to compare with")
+                .hasArg(true)
+                .build();
+
+        options.addOption(o);
 
         return options;
     }

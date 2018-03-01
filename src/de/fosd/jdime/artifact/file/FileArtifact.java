@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,6 +56,9 @@ import de.fosd.jdime.config.merge.Revision;
 import de.fosd.jdime.config.merge.Revision.SuccessiveNameSupplier;
 import de.fosd.jdime.execption.AbortException;
 import de.fosd.jdime.execption.NotYetImplementedException;
+import de.fosd.jdime.matcher.Matcher;
+import de.fosd.jdime.matcher.matching.Color;
+import de.fosd.jdime.matcher.matching.Matching;
 import de.fosd.jdime.merge.Merge;
 import de.fosd.jdime.operations.MergeOperation;
 import de.fosd.jdime.stats.ElementStatistics;
@@ -99,6 +104,14 @@ public class FileArtifact extends Artifact<FileArtifact> {
         mimeMap = new MimetypesFileTypeMap();
         mimeMap.addMimeTypes(MIME_JAVA_SOURCE + " java");
     }
+
+    /**
+     * Default temporary folder.
+     * TODO: adapt different OS.
+     *
+     * @author paul
+     */
+    public static final String TMP_FOLDER = "/tmp";
 
     /**
      * A <code>Comparator</code> to compare <code>FileArtifact</code>s by their <code>File</code>s. It considers
@@ -612,7 +625,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
                 context.getStatistics().setCurrentFileMergeScenario(operation.getMergeScenario());
             }
 
-            LOG.finest(() -> "Merging directories " + operation.getMergeScenario());
+            LOG.finer(() -> "Merging directories " + operation.getMergeScenario());
             merge.merge(operation, context);
         } else {
             MergeStrategy<FileArtifact> strategy = context.getMergeStrategy();
@@ -630,12 +643,24 @@ public class FileArtifact extends Artifact<FileArtifact> {
             try {
                 try {
                     strategy.merge(operation, context);
-                } catch (Throwable e) {
 
+                    context.getExpected(scenario).ifPresent(exp -> {
+                        LOG.info("Expected: " + exp.getFile().getAbsolutePath());
+                        ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact();
+                        ASTNodeArtifact expected = new ASTNodeArtifact(exp);
+
+                        // diff target expected
+                        Matcher<ASTNodeArtifact> matcher = new Matcher<>(target, expected);
+                        Matching<ASTNodeArtifact> m = matcher.match(context, Color.BLUE).get(target, expected).get();
+                        if (!m.hasFullyMatched()) {
+                            LOG.severe("Merged result differs from expected: " +
+                                    exp.getFile().getAbsolutePath() + ": " + m);
+                        }
+                    });
+                } catch (Throwable e) {
                     if (context.hasStatistics()) {
                         context.getStatistics().getScenarioStatistics(scenario).setStatus(FAILED);
                     }
-
                     throw e;
                 }
             } catch (AbortException e) {
@@ -725,6 +750,26 @@ public class FileArtifact extends Artifact<FileArtifact> {
     @Override
     public FileArtifact createChoiceArtifact(String condition, FileArtifact artifact) {
         throw new NotYetImplementedException();
+    }
+
+    /**
+     * Create a temporary file artifact which has the `content` and write it to `TMP_FOLDER` on the file system.
+     * ASSUME that `this` is file and `content` is nonempty.
+     *
+     * @return the new temporary file artifact
+     */
+    public ASTNodeArtifact createASTNodeArtifact() {
+        assert isFile() && content != null;
+        FileArtifact fileArtifact = new FileArtifact(this);
+        Path path = Paths.get(TMP_FOLDER, getFile().getName());
+        fileArtifact.file = path.toFile();
+        try {
+            fileArtifact.writeContent();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new ASTNodeArtifact(fileArtifact);
     }
 
     /**

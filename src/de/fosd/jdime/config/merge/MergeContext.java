@@ -1,30 +1,32 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.config.merge;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,27 +58,7 @@ import de.fosd.jdime.strategy.NWayStrategy;
 import de.fosd.jdime.strategy.StructuredStrategy;
 import de.fosd.jdime.strdump.DumpMode;
 
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM_FIX_PERCENTAGE;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM_OPTIONS;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM_PARALLEL;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM_REMATCH_BOUND;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CM_SEED;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_CONSECUTIVE;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_DIFFONLY;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_DUMP;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_EXIT_ON_ERROR;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_FORCE_OVERWRITE;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_INSPECT_ELEMENT;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_INSPECT_METHOD;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_KEEPGOING;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_LOOKAHEAD;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_MODE;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_OUTPUT;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_PRETEND;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_QUIET;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_RECURSIVE;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_STATS;
+import static de.fosd.jdime.config.CommandLineConfigSource.*;
 import static de.fosd.jdime.config.JDimeConfig.FILTER_INPUT_DIRECTORIES;
 import static de.fosd.jdime.config.JDimeConfig.STATISTICS_XML_EXCLUDE_MSS_FIELDS;
 import static de.fosd.jdime.config.JDimeConfig.TWOWAY_FALLBACK;
@@ -105,6 +87,16 @@ public class MergeContext implements Cloneable {
      * The default git command.
      */
     public static final String DEFAULT_GIT_CMD = "git";
+
+    /**
+     * Default revision for expected file artifact.
+     */
+    public static final Revision EXPECTED = new Revision("expected");
+
+    /**
+     * Default revision for diff output artifact.
+     */
+    public static final Revision DIFF_OUT = new Revision("diffout");
 
     /**
      * Whether merge inserts choice nodes instead of direct merging.
@@ -237,6 +229,20 @@ public class MergeContext implements Cloneable {
     private boolean cmMatcherFixRandomPercentage;
 
     /**
+     * Expected file/folder. When given, compare result with this expected file/folder after merge.
+     *
+     * @author paul
+     */
+    private Optional<String> expected;
+
+    /**
+     * Root of left artifact. Use this to compute relative path for any file.
+     *
+     * @author paul
+     */
+    private FileArtifact leftArtifactRoot;
+
+    /**
      * Constructs a new <code>MergeContext</code> initializing all options to their default values.
      */
     public MergeContext() {
@@ -278,13 +284,64 @@ public class MergeContext implements Cloneable {
         this.costModelIterations = 100;
         this.cmMatcherParallel = true;
         this.cmMatcherFixRandomPercentage = true;
+        this.expected = Optional.empty();
+    }
+
+    /**
+     * Create a diff-only merge.
+     *
+     * @param target   target file artifact
+     * @param expected expected file artifact
+     * @author paul
+     */
+    public MergeContext(FileArtifact target, FileArtifact expected) {
+        this.conditionalMerge = false;
+        this.conditionalOutsideMethods = true;
+        this.diffOnly = false;
+        this.consecutive = false;
+        this.dumpMode = DumpMode.NONE;
+        this.forceOverwriting = false;
+        this.inputFiles = new ArtifactList<>();
+        this.inputFiles.add(target);
+        this.inputFiles.add(expected);
+        this.filterInputDirectories = true;
+        this.keepGoing = false;
+        this.exitOnError = false;
+        this.mergeStrategy = new LinebasedStrategy();
+        this.outputFile = null;
+        this.quiet = false;
+        this.pretend = true;
+        this.recursive = false;
+        this.collectStatistics = false;
+        this.statistics = new Statistics();
+        this.excludeStatisticsMSSFields = new ArrayList<>();
+        this.useMCESubtreeMatcher = false;
+        this.semiStructured = false;
+        this.semiStructuredLevel = KeyEnums.Level.METHOD;
+        this.lookAhead = MergeContext.LOOKAHEAD_OFF;
+        this.lookAheads = new HashMap<>();
+        this.crashes = new HashMap<>();
+        this.cmMatcherMode = CMMode.OFF;
+        this.cmReMatchBound = .3f;
+        this.wr = 1;
+        this.wn = 1;
+        this.wa = 1;
+        this.ws = 1;
+        this.wo = 1;
+        this.pAssign = .7f;
+        this.fixLower = .25f;
+        this.fixUpper = .50f;
+        this.seed = Optional.of(42L);
+        this.costModelIterations = 100;
+        this.cmMatcherParallel = true;
+        this.cmMatcherFixRandomPercentage = true;
+        this.expected = Optional.empty();
     }
 
     /**
      * Copy constructor.
      *
-     * @param toCopy
-     *         the <code>MergeContext</code> to copy
+     * @param toCopy the <code>MergeContext</code> to copy
      */
     public MergeContext(MergeContext toCopy) {
         this.conditionalMerge = toCopy.conditionalMerge;
@@ -332,14 +389,15 @@ public class MergeContext implements Cloneable {
         this.costModelIterations = toCopy.costModelIterations;
         this.cmMatcherParallel = toCopy.cmMatcherParallel;
         this.cmMatcherFixRandomPercentage = toCopy.cmMatcherFixRandomPercentage;
+        this.expected = toCopy.expected;
+        this.leftArtifactRoot = toCopy.leftArtifactRoot;
     }
 
     /**
      * Initializes the configuration options stored in the <code>MergeContext</code> from the given
      * <code>JDimeConfig</code>.
      *
-     * @param config
-     *         the <code>JDimeConfig</code> to query for config values
+     * @param config the <code>JDimeConfig</code> to query for config values
      */
     public void configureFrom(JDimeConfig config) {
         configDump(config);
@@ -353,8 +411,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options related to the {@link Artifact} inspection functionality.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configInspect(JDimeConfig config) {
         config.getInteger(CLI_INSPECT_ELEMENT).ifPresent(elId -> {
@@ -371,8 +428,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options related to the {@link Artifact} dump functionality.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configDump(JDimeConfig config) {
         Function<String, Optional<DumpMode>> dmpModeParser = mode -> {
@@ -391,8 +447,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options related to the {@link Statistics}.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configStatistics(JDimeConfig config) {
         config.getBoolean(CLI_STATS).ifPresent(this::collectStatistics);
@@ -420,8 +475,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options determining how the merge is to be executed.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configMerge(JDimeConfig config) {
         {
@@ -481,8 +535,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options determining how to handle errors while merging.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configErrorHandling(JDimeConfig config) {
         config.getBoolean(CLI_KEEPGOING).ifPresent(this::setKeepGoing);
@@ -492,8 +545,7 @@ public class MergeContext implements Cloneable {
     /**
      * Reads configuration options determining how the {@link CostModelMatcher} operates.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configCostModelMatcher(JDimeConfig config) {
         config.get(CLI_CM, mode -> {
@@ -584,8 +636,7 @@ public class MergeContext implements Cloneable {
      * Reads configuration options determining how to output the merge results and reads the additional arguments
      * to configure the input files for the merge.
      *
-     * @param config
-     *         the JDime configuration options
+     * @param config the JDime configuration options
      */
     private void configInputOutput(JDimeConfig config) {
         config.getBoolean(FILTER_INPUT_DIRECTORIES).ifPresent(this::setFilterInputDirectories);
@@ -599,10 +650,12 @@ public class MergeContext implements Cloneable {
 
         if (args.isPresent()) {
             List<File> inputFiles = Arrays.stream(args.get().split(CommandLineConfigSource.ARG_LIST_SEP))
-                                          .map(String::trim).map(File::new).collect(Collectors.toCollection(ArrayList::new));
+                    .map(String::trim).map(File::new).collect(Collectors.toCollection(ArrayList::new));
             List<File> nonExistent = inputFiles.stream().filter(f -> !f.exists()).collect(Collectors.toList());
 
             Boolean twFallback = config.getBoolean(TWOWAY_FALLBACK).orElse(false);
+
+            leftArtifactRoot = new FileArtifact(MergeScenario.LEFT, inputFiles.get(0));
 
             if (!nonExistent.isEmpty()) {
                 if (twFallback && inputFiles.size() == MergeType.THREEWAY_FILES && nonExistent.size() == 1
@@ -702,6 +755,9 @@ public class MergeContext implements Cloneable {
                 throw new AbortException("Not output file or directory given.");
             }
         }
+
+        // Handle expected artifact
+        config.get(CLI_EXPECTED).ifPresent(e -> expected = Optional.of(e));
     }
 
     /**
@@ -716,8 +772,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the input files to the new value.
      *
-     * @param inputFiles
-     *         the new input files
+     * @param inputFiles the new input files
      */
     public void setInputFiles(List<FileArtifact> inputFiles) {
         this.inputFiles = inputFiles;
@@ -735,8 +790,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the merge strategy.
      *
-     * @param mergeStrategy
-     *         merge strategy
+     * @param mergeStrategy merge strategy
      */
     public void setMergeStrategy(MergeStrategy<FileArtifact> mergeStrategy) {
         this.mergeStrategy = mergeStrategy;
@@ -758,8 +812,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the output file to the new value.
      *
-     * @param outputFile
-     *         the new output file
+     * @param outputFile the new output file
      */
     public void setOutputFile(FileArtifact outputFile) {
         this.outputFile = outputFile;
@@ -807,8 +860,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to only perform the diff stage of the merge.
      *
-     * @param diffOnly
-     *         whether to diff only
+     * @param diffOnly whether to diff only
      */
     public void setDiffOnly(boolean diffOnly) {
         this.diffOnly = diffOnly;
@@ -826,8 +878,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the <code>DumpMode</code> to the new value.
      *
-     * @param dumpMode
-     *         the new <code>DumpMode</code>
+     * @param dumpMode the new <code>DumpMode</code>
      */
     public void setDumpMode(DumpMode dumpMode) {
         this.dumpMode = dumpMode;
@@ -845,8 +896,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether overwriting of files in the output directory is forced.
      *
-     * @param forceOverwriting
-     *         overwrite files in the output directory
+     * @param forceOverwriting overwrite files in the output directory
      */
     public void setForceOverwriting(boolean forceOverwriting) {
         this.forceOverwriting = forceOverwriting;
@@ -866,8 +916,7 @@ public class MergeContext implements Cloneable {
      * Whether to filter out any <code>FileArtifact</code>s not representing java source code files or directories
      * (possibly indirectly) containing such files before merging. Defaults to true.
      *
-     * @param filterInputDirectories
-     *         whether to applie the filter to input directories before merging
+     * @param filterInputDirectories whether to applie the filter to input directories before merging
      */
     public void setFilterInputDirectories(boolean filterInputDirectories) {
         this.filterInputDirectories = filterInputDirectories;
@@ -885,8 +934,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to keep going to the new value.
      *
-     * @param keepGoing
-     *         whether to keep going
+     * @param keepGoing whether to keep going
      */
     public void setKeepGoing(boolean keepGoing) {
         this.keepGoing = keepGoing;
@@ -904,8 +952,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to abort the merge if merging a set of files fails.
      *
-     * @param exitOnError
-     *         the new value
+     * @param exitOnError the new value
      */
     public void setExitOnError(boolean exitOnError) {
         this.exitOnError = exitOnError;
@@ -923,8 +970,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether the output is quiet or not.
      *
-     * @param quiet
-     *         do not print merge results to stdout
+     * @param quiet do not print merge results to stdout
      */
     public void setQuiet(boolean quiet) {
         this.quiet = quiet;
@@ -942,8 +988,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether the merge is only simulated and not written to an output file.
      *
-     * @param pretend
-     *         do not write the merge result to an output file
+     * @param pretend do not write the merge result to an output file
      */
     public void setPretend(boolean pretend) {
         this.pretend = pretend;
@@ -961,8 +1006,7 @@ public class MergeContext implements Cloneable {
     /**
      * Set whether directories are merged recursively.
      *
-     * @param recursive
-     *         directories are merged recursively
+     * @param recursive directories are merged recursively
      */
     public void setRecursive(boolean recursive) {
         this.recursive = recursive;
@@ -971,8 +1015,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether statistical data should be collected during the next run using this <code>MergeContext</code>
      *
-     * @param collectStatistics
-     *         whether to collect statistical data
+     * @param collectStatistics whether to collect statistical data
      */
     public void collectStatistics(boolean collectStatistics) {
         this.collectStatistics = collectStatistics;
@@ -990,8 +1033,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to do consecutive merging.
      *
-     * @param consecutive
-     *         whether to do consecutive merging
+     * @param consecutive whether to do consecutive merging
      */
     public void setConsecutive(boolean consecutive) {
         this.consecutive = consecutive;
@@ -1009,8 +1051,7 @@ public class MergeContext implements Cloneable {
     /**
      * Whether merge the given artifact inserts choice nodes instead of direct merging.
      *
-     * @param artifact
-     *         the artifact to check
+     * @param artifact the artifact to check
      * @return true iff conditional merge is enabled for the given artifact
      */
     public boolean isConditionalMerge(Artifact<?> artifact) {
@@ -1021,8 +1062,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to insert choice nodes instead of direct merging where appropriate.
      *
-     * @param conditionalMerge
-     *         the new value
+     * @param conditionalMerge the new value
      */
     public void setConditionalMerge(boolean conditionalMerge) {
         this.conditionalMerge = conditionalMerge;
@@ -1048,8 +1088,7 @@ public class MergeContext implements Cloneable {
      * Returns the specific lookahead for the given type or the generic lookahead as returned by
      * {@link #getLookAhead()}.
      *
-     * @param type
-     *         the type to get the lookahead for
+     * @param type the type to get the lookahead for
      * @return the lookahead
      */
     public int getLookahead(KeyEnums.Type type) {
@@ -1078,9 +1117,8 @@ public class MergeContext implements Cloneable {
      * LOOKAHEAD_FULL, the matcher will look at the entire subtree. The default
      * ist to do no look-ahead matching.
      *
-     * @param lookAhead
-     *         number of levels to look down for subtree matches if the
-     *         currently compared nodes do not match
+     * @param lookAhead number of levels to look down for subtree matches if the
+     *                  currently compared nodes do not match
      */
     public void setLookAhead(int lookAhead) {
         this.lookAhead = lookAhead;
@@ -1089,10 +1127,8 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the specific lookahead for the given type.
      *
-     * @param type
-     *         the type whose lookahead is to be set
-     * @param lookAhead
-     *         the lookahead for the type
+     * @param type      the type whose lookahead is to be set
+     * @param lookAhead the lookahead for the type
      */
     public void setLookAhead(KeyEnums.Type type, int lookAhead) {
         lookAheads.put(type, lookAhead);
@@ -1110,8 +1146,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether conditional merging is used outside of methods.
      *
-     * @param conditionalOutsideMethods
-     *         use conditional merging outside of methods
+     * @param conditionalOutsideMethods use conditional merging outside of methods
      */
     public void setConditionalOutsideMethods(boolean conditionalOutsideMethods) {
         this.conditionalOutsideMethods = conditionalOutsideMethods;
@@ -1129,10 +1164,8 @@ public class MergeContext implements Cloneable {
     /**
      * Add a <code>MergeScenario</code> to the list of crashed scenarios.
      *
-     * @param scenario
-     *         <code>MergeScenario</code> which crashed
-     * @param t
-     *         the crash that occurred
+     * @param scenario <code>MergeScenario</code> which crashed
+     * @param t        the crash that occurred
      */
     public void addCrash(MergeScenario<?> scenario, Throwable t) {
         crashes.put(scenario, t);
@@ -1150,8 +1183,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets whether to use the <code>MCESubtreeMatcher</code>.
      *
-     * @param useMCESubtreeMatcher
-     *         the new value
+     * @param useMCESubtreeMatcher the new value
      */
     public void setUseMCESubtreeMatcher(boolean useMCESubtreeMatcher) {
         this.useMCESubtreeMatcher = useMCESubtreeMatcher;
@@ -1171,8 +1203,7 @@ public class MergeContext implements Cloneable {
      * Sets whether the {@link StructuredStrategy} should act semi-structured, that is whether it should perform line
      * based merging on the configured {@link #semiStructuredLevel}.
      *
-     * @param semiStructured
-     *         whether the {@link StructuredStrategy} should act semi-structured
+     * @param semiStructured whether the {@link StructuredStrategy} should act semi-structured
      */
     public void setSemiStructured(boolean semiStructured) {
         this.semiStructured = semiStructured;
@@ -1190,8 +1221,7 @@ public class MergeContext implements Cloneable {
     /**
      * Sets the level for which line based merging is used if {@link #semiStructured} is true.
      *
-     * @param semiStructuredLevel
-     *         the level for which line based merging is used
+     * @param semiStructuredLevel the level for which line based merging is used
      */
     public void setSemiStructuredLevel(KeyEnums.Level semiStructuredLevel) {
         this.semiStructuredLevel = semiStructuredLevel;
@@ -1353,5 +1383,29 @@ public class MergeContext implements Cloneable {
 
     public void setCmMatcherFixRandomPercentage(boolean cmMatcherFixRandomPercentage) {
         this.cmMatcherFixRandomPercentage = cmMatcherFixRandomPercentage;
+    }
+
+    /**
+     * Get corresponding expected artifact.
+     *
+     * @return expected artifact
+     * @author paul
+     */
+    public Optional<FileArtifact> getExpected(MergeScenario<FileArtifact> mergeScenario) {
+        if (expected.isPresent()) {
+            String exp = expected.get();
+            String leftPath = mergeScenario.get(0).getFile().getAbsolutePath();
+            String leftRootPath = leftArtifactRoot.getFile().getAbsolutePath();
+            assert leftPath.startsWith(leftRootPath);
+
+            if (leftArtifactRoot.getFile().isFile()) {
+                return Optional.of(new FileArtifact(EXPECTED, new File(exp)));
+            }
+
+            String expFileName = leftPath.substring(leftRootPath.length());
+            Path path = Paths.get(exp, expFileName);
+            return Optional.of(new FileArtifact(EXPECTED, path.toFile()));
+        }
+        return Optional.empty();
     }
 }
