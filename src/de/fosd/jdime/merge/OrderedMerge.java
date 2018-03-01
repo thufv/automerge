@@ -61,16 +61,21 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
             if (score > bestScore) {
                 bestScore = score;
                 best = elem;
-            } else {
-                up.add(elem);
             }
         }
         if (best != null) {
             LOG.log(LOG_LEVEL, "matched: " + best);
         }
+
+        iter = list.iterator();
+        boolean afterBest = false;
         while (iter.hasNext()) {
             elem = iter.next();
-            down.add(elem);
+            if (elem == best) {
+                afterBest = true;
+            } else {
+                (afterBest ? down : up).add(elem);
+            }
         }
 
         return new Pair<>(new Pair<>(up, down), best);
@@ -303,6 +308,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         ArtifactList<T> rightChildren = right.getChildrenAsArtifactList();
         ArtifactList<T> baseChildren = base.getChildrenAsArtifactList();
 
+        /*
         if (leftChildren.size() == 1 && rightChildren.size() == 1 && baseChildren.size() <= 1) {
             T leftChild = leftChildren.head();
             T rightChild = rightChildren.head();
@@ -332,6 +338,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
             mergeOp.apply(context);
             return;
         }
+        */
 
         ArtifactList<T> rightRest = merge3(baseChildren, leftChildren, rightChildren,
                 l, r, target, context, false);

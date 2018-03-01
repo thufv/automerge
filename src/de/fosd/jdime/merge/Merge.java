@@ -78,6 +78,8 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
         Matcher<T> matcher = null;
         Matching<T> m;
 
+        // Finally, `left.hasMatching(r) && right.hasMatching(l)` must hold after matching.
+
         if (!left.hasMatching(r) && !right.hasMatching(l)) {
             if (!base.isEmpty()) {
                 // 3-way merge
@@ -140,7 +142,6 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
         LOG.finest(() -> String.format("%s -> (%s)", prefix(right), rightChildren));
 
         if (!left.hasChildren() || !right.hasChildren()) {
-
             if (!left.hasChildren() && !right.hasChildren()) {
                 LOG.finest(() -> String.format("%s and [%s] have no children", prefix(left), right.getId()));
                 return;
@@ -148,7 +149,6 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
                 LOG.finest(() -> String.format("%s has no children", prefix(left)));
 
                 if (!base.hasChildren() || !right.hasChanges(b)) {
-
                     for (T rightChild : right.getChildren()) {
                         AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
                         addOp.apply(context);
@@ -167,9 +167,7 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
             } else if (!right.hasChildren()) {
                 LOG.finest(() -> String.format("%s has no children", prefix(right)));
 
-
                 if (!base.hasChildren() || !left.hasChanges(b)) {
-
                     for (T leftChild : left.getChildren()) {
                         AddOperation<T> addOp = new AddOperation<>(leftChild, target, l.getName());
                         addOp.apply(context);

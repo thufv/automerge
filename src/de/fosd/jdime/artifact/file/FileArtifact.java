@@ -67,6 +67,7 @@ import de.fosd.jdime.stats.MergeScenarioStatistics;
 import de.fosd.jdime.stats.StatisticsInterface;
 import de.fosd.jdime.strategy.LinebasedStrategy;
 import de.fosd.jdime.strategy.MergeStrategy;
+import de.fosd.jdime.strdump.DumpMode;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.CompositeFileComparator;
@@ -646,8 +647,8 @@ public class FileArtifact extends Artifact<FileArtifact> {
 
                     context.getExpected(scenario).ifPresent(exp -> {
                         LOG.info("Expected: " + exp.getFile().getAbsolutePath());
-                        ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact();
-                        ASTNodeArtifact expected = new ASTNodeArtifact(exp);
+                        ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact(MergeScenario.TARGET);
+                        ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
 
                         // diff target expected
                         Matcher<ASTNodeArtifact> matcher = new Matcher<>(target, expected);
@@ -655,6 +656,14 @@ public class FileArtifact extends Artifact<FileArtifact> {
                         if (!m.hasFullyMatched()) {
                             LOG.severe("Merged result differs from expected: " +
                                     exp.getFile().getAbsolutePath() + ": " + m);
+                            LOG.severe("Expected:");
+                            if (LOG.isLoggable(SEVERE)) {
+                                System.out.println(expected.prettyPrint());
+                            }
+                            LOG.severe("Output:");
+                            if (LOG.isLoggable(SEVERE)) {
+                                System.out.println(target.prettyPrint());
+                            }
                         }
                     });
                 } catch (Throwable e) {
@@ -758,18 +767,24 @@ public class FileArtifact extends Artifact<FileArtifact> {
      *
      * @return the new temporary file artifact
      */
-    public ASTNodeArtifact createASTNodeArtifact() {
-        assert isFile() && content != null;
-        FileArtifact fileArtifact = new FileArtifact(this);
-        Path path = Paths.get(TMP_FOLDER, getFile().getName());
-        fileArtifact.file = path.toFile();
+    public ASTNodeArtifact createASTNodeArtifact(Revision revision) {
+        assert isFile();
+
+        Path path = Paths.get(TMP_FOLDER, revision.getName(), getFile().getName());
         try {
-            fileArtifact.writeContent();
+            OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(path.toFile()), UTF_8);
+            if (content == null) {
+                ASTNodeArtifact a = new ASTNodeArtifact(this);
+                out.write(a.prettyPrint());
+            } else {
+                out.write(content);
+            }
+            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return new ASTNodeArtifact(fileArtifact);
+        return new ASTNodeArtifact(new FileArtifact(revision, new File(path.toAbsolutePath().toString())));
     }
 
     /**

@@ -288,57 +288,6 @@ public class MergeContext implements Cloneable {
     }
 
     /**
-     * Create a diff-only merge.
-     *
-     * @param target   target file artifact
-     * @param expected expected file artifact
-     * @author paul
-     */
-    public MergeContext(FileArtifact target, FileArtifact expected) {
-        this.conditionalMerge = false;
-        this.conditionalOutsideMethods = true;
-        this.diffOnly = false;
-        this.consecutive = false;
-        this.dumpMode = DumpMode.NONE;
-        this.forceOverwriting = false;
-        this.inputFiles = new ArtifactList<>();
-        this.inputFiles.add(target);
-        this.inputFiles.add(expected);
-        this.filterInputDirectories = true;
-        this.keepGoing = false;
-        this.exitOnError = false;
-        this.mergeStrategy = new LinebasedStrategy();
-        this.outputFile = null;
-        this.quiet = false;
-        this.pretend = true;
-        this.recursive = false;
-        this.collectStatistics = false;
-        this.statistics = new Statistics();
-        this.excludeStatisticsMSSFields = new ArrayList<>();
-        this.useMCESubtreeMatcher = false;
-        this.semiStructured = false;
-        this.semiStructuredLevel = KeyEnums.Level.METHOD;
-        this.lookAhead = MergeContext.LOOKAHEAD_OFF;
-        this.lookAheads = new HashMap<>();
-        this.crashes = new HashMap<>();
-        this.cmMatcherMode = CMMode.OFF;
-        this.cmReMatchBound = .3f;
-        this.wr = 1;
-        this.wn = 1;
-        this.wa = 1;
-        this.ws = 1;
-        this.wo = 1;
-        this.pAssign = .7f;
-        this.fixLower = .25f;
-        this.fixUpper = .50f;
-        this.seed = Optional.of(42L);
-        this.costModelIterations = 100;
-        this.cmMatcherParallel = true;
-        this.cmMatcherFixRandomPercentage = true;
-        this.expected = Optional.empty();
-    }
-
-    /**
      * Copy constructor.
      *
      * @param toCopy the <code>MergeContext</code> to copy

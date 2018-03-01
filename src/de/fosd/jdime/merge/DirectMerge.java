@@ -99,7 +99,7 @@ public class DirectMerge<T extends Artifact<T>> implements MergeInterface<T> {
                     : mBase.getMatchingArtifact(leftChild);
 
             if (l.contains(rightChild) && r.contains(leftChild)) {
-                LOG.finer(String.format("1-1: (%s) %s and (%s) %s are matched.",
+                LOG.fine(String.format("1-1: (%s) %s and (%s) %s are matched.",
                         leftChild.getId(), leftChild, rightChild.getId(), rightChild));
 
                 // left and right have the artifact. merge it.
