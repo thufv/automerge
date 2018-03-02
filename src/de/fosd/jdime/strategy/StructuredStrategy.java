@@ -152,6 +152,8 @@ public class StructuredStrategy extends MergeStrategy<FileArtifact> {
 
             LOG.info(() -> String.format("%s: merge time %d ms.", getClass().getSimpleName(), merge.getTimeMS()));
 
+            operation.targetCache = targetNode;
+
             if (!context.isDiffOnly()) {
                 LOG.fine(() -> String.format("Tree dump of target node:%n%s", targetNode.dump(PLAINTEXT_TREE)));
             }

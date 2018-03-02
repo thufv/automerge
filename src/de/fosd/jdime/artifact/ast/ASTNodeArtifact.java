@@ -607,4 +607,23 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
         return choice;
     }
+
+    /**
+     * Check if the artifact has conflict.
+     *
+     * @return has conflict
+     * @author paul
+     */
+    public boolean hasConflict() {
+        if (isConflict()) {
+            return true;
+        }
+        for (ASTNodeArtifact child : getChildren()) {
+            if (child.hasConflict()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

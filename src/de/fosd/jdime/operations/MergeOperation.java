@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import de.fosd.jdime.artifact.Artifact;
+import de.fosd.jdime.artifact.ast.ASTNodeArtifact;
 import de.fosd.jdime.config.merge.MergeContext;
 import de.fosd.jdime.config.merge.MergeScenario;
 import de.fosd.jdime.config.merge.MergeType;
@@ -59,6 +60,13 @@ public class MergeOperation<T extends Artifact<T>> extends Operation<T> {
      * The <code>Artifact</code> to output the result of the merge to.
      */
     private T target;
+
+    /**
+     * Target ASTNodeArtifact cache.
+     *
+     * @author paul
+     */
+    public ASTNodeArtifact targetCache;
 
     /**
      * Constructs a new <code>MergeOperation</code> merging the given <code>inputArtifacts</code>. The result

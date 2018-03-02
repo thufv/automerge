@@ -74,6 +74,7 @@ import org.apache.commons.io.comparator.CompositeFileComparator;
 
 import static de.fosd.jdime.stats.MergeScenarioStatus.FAILED;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static org.apache.commons.io.comparator.DirectoryFileComparator.DIRECTORY_COMPARATOR;
 import static org.apache.commons.io.comparator.NameFileComparator.NAME_COMPARATOR;
@@ -644,25 +645,31 @@ public class FileArtifact extends Artifact<FileArtifact> {
             try {
                 try {
                     strategy.merge(operation, context);
+                    LOG.info(operation.targetCache.hasConflict() ? "CONFLICT" : "NO CONFLICT");
 
                     context.getExpected(scenario).ifPresent(exp -> {
                         LOG.info("Expected: " + exp.getFile().getAbsolutePath());
-                        ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact(MergeScenario.TARGET);
-                        ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
 
-                        // diff target expected
-                        Matcher<ASTNodeArtifact> matcher = new Matcher<>(target, expected);
-                        Matching<ASTNodeArtifact> m = matcher.match(context, Color.BLUE).get(target, expected).get();
-                        if (!m.hasFullyMatched()) {
-                            LOG.severe("Merged result differs from expected: " +
-                                    exp.getFile().getAbsolutePath() + ": " + m);
-                            LOG.severe("Expected:");
-                            if (LOG.isLoggable(SEVERE)) {
-                                System.out.println(expected.prettyPrint());
-                            }
-                            LOG.severe("Output:");
-                            if (LOG.isLoggable(SEVERE)) {
-                                System.out.println(target.prettyPrint());
+                        if (operation.targetCache.hasConflict()) {
+                            LOG.severe("Merged result has conflicts");
+                        } else {
+                            ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact(MergeScenario.TARGET);
+                            ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
+
+                            // diff target expected
+                            Matcher<ASTNodeArtifact> matcher = new Matcher<>(target, expected);
+                            Matching<ASTNodeArtifact> m = matcher.match(context, Color.BLUE).get(target, expected).get();
+                            if (!m.hasFullyMatched()) {
+                                LOG.severe("Merged result differs from expected: " +
+                                        exp.getFile().getAbsolutePath() + ": " + m);
+                                LOG.info("Expected:");
+                                if (LOG.isLoggable(INFO)) {
+                                    System.out.println(expected.prettyPrint());
+                                }
+                                LOG.info("Output:");
+                                if (LOG.isLoggable(INFO)) {
+                                    System.out.println(target.prettyPrint());
+                                }
                             }
                         }
                     });
