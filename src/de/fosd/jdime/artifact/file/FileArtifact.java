@@ -679,8 +679,6 @@ public class FileArtifact extends Artifact<FileArtifact> {
                                     if (!m2.hasFullyMatched()) {
                                         LOG.severe("Check: Output differs from right: " +
                                                 exp.getFile().getAbsolutePath() + ": " + m2);
-                                        System.out.println(right.dump(DumpMode.PLAINTEXT_TREE));
-                                        System.out.println(target.dump(DumpMode.PLAINTEXT_TREE));
                                     }
 
                                     return;
@@ -738,15 +736,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
                 if (context.isExitOnError()) {
                     throw new AbortException(e);
                 } else {
-
-                    if (!context.isKeepGoing() && !(strategy instanceof LinebasedStrategy)) {
-                        LOG.severe(() -> "Falling back to line based strategy.");
-
-                        context.setMergeStrategy(MergeStrategy.parse(MergeStrategy.LINEBASED).get());
-                        merge(operation, context);
-                    } else {
-                        LOG.severe(() -> "Skipping " + scenario);
-                    }
+                    LOG.severe(() -> "Skipping: " + scenario);
                 }
             }
         }

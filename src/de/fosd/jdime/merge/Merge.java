@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.merge;
 
@@ -36,16 +36,15 @@ import de.fosd.jdime.matcher.matching.Color;
 import de.fosd.jdime.matcher.matching.Matching;
 import de.fosd.jdime.operations.AddOperation;
 import de.fosd.jdime.operations.ConflictOperation;
+import de.fosd.jdime.operations.DeleteOperation;
 import de.fosd.jdime.operations.MergeOperation;
 
 import static de.fosd.jdime.artifact.Artifacts.root;
 import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
 
 /**
+ * @param <T> type of artifact
  * @author Olaf Lessenich
- *
- * @param <T>
- *            type of artifact
  */
 public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
 
@@ -60,7 +59,7 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
      * TODO: this needs high-level explanation.
      *
      * @param operation the <code>MergeOperation</code> to perform
-     * @param context the <code>MergeContext</code>
+     * @param context   the <code>MergeContext</code>
      */
     @Override
     public void merge(MergeOperation<T> operation, MergeContext context) {
@@ -115,7 +114,7 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
                 return;
             }
         }
-        
+
         if (context.isDiffOnly() && left.isRoot()) {
             assert (right.isRoot());
             return;
@@ -145,46 +144,70 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
             if (!left.hasChildren() && !right.hasChildren()) {
                 LOG.finest(() -> String.format("%s and [%s] have no children", prefix(left), right.getId()));
                 return;
-            } else if (!left.hasChildren()) {
+            }
+
+            // only one of left or right has no children
+            if (!left.hasChildren()) { // left has no children
                 LOG.finest(() -> String.format("%s has no children", prefix(left)));
 
-                if (!base.hasChildren() || !right.hasChanges(b)) {
+                if (!base.hasChildren()) {
+                    LOG.fine("Merge: both base and left are empty, therefore add right children");
                     for (T rightChild : right.getChildren()) {
                         AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
                         addOp.apply(context);
                     }
                     return;
-                } else {
-                    LOG.finest(() -> String.format("%s was deleted by left", prefix(right)));
-                    LOG.finest(() -> String.format("%s has changes in subtree", prefix(right)));
+                }
 
+                // base.hasChildren()
+                if (!right.hasChanges(b)) {
+                    LOG.fine("Merge: left deleted children of right (= base)");
                     for (T rightChild : right.getChildren()) {
-                        ConflictOperation<T> conflictOp = new ConflictOperation<>(null, rightChild, target, l.getName(), r.getName());
-                        conflictOp.apply(context);
+                        DeleteOperation<T> delOp = new DeleteOperation<>(rightChild, target, r.getName());
+                        delOp.apply(context);
                     }
                     return;
                 }
-            } else if (!right.hasChildren()) {
+
+                // base.hasChildren() && right.hasChanges(b)
+                // delete-change conflict
+                LOG.fine("Merge: (left) deletion is conflict with (right) updating");
+                for (T rightChild : right.getChildren()) {
+                    ConflictOperation<T> conflictOp = new ConflictOperation<>(null, rightChild, target, l.getName(), r.getName());
+                    conflictOp.apply(context);
+                }
+            } else if (!right.hasChildren()) { // right has no children
                 LOG.finest(() -> String.format("%s has no children", prefix(right)));
 
-                if (!base.hasChildren() || !left.hasChanges(b)) {
+                if (!base.hasChildren()) {
+                    LOG.fine("Merge: both base and right are empty, therefore add left children");
                     for (T leftChild : left.getChildren()) {
                         AddOperation<T> addOp = new AddOperation<>(leftChild, target, l.getName());
                         addOp.apply(context);
                     }
                     return;
-                } else {
-                    LOG.finest(() -> String.format("%s was deleted by right", prefix(left)));
-                    LOG.finest(() -> String.format("%s has changes in subtree", prefix(left)));
+                }
 
+                // base.hasChildren()
+                if (!left.hasChanges(b)) { // left = base, right is null, therefore elements deleted by right.
+                    LOG.fine("Merge: right deleted children of left (= base)");
                     for (T leftChild : left.getChildren()) {
-                        ConflictOperation<T> conflictOp = new ConflictOperation<>(leftChild, null, target, l.getName(), r.getName());
-                        conflictOp.apply(context);
+                        DeleteOperation<T> delOp = new DeleteOperation<>(leftChild, target, l.getName());
+                        delOp.apply(context);
                     }
+
                     return;
                 }
+
+                // base.hasChildren() && left.hasChanges(b)
+                // delete-change conflict
+                LOG.fine("Merge: (right) deletion is conflict with (left) updating");
+                for (T leftChild : left.getChildren()) {
+                    ConflictOperation<T> conflictOp = new ConflictOperation<>(leftChild, null, target, l.getName(), r.getName());
+                    conflictOp.apply(context);
+                }
             } else {
-                throw new RuntimeException("Something is very broken.");
+                assert false;
             }
         }
 
@@ -240,8 +263,7 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
     /**
      * Returns the logging prefix.
      *
-     * @param artifact
-     *            artifact that is subject of the logging
+     * @param artifact artifact that is subject of the logging
      * @return logging prefix
      */
     private String prefix(T artifact) {
