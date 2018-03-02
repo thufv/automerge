@@ -651,16 +651,61 @@ public class FileArtifact extends Artifact<FileArtifact> {
                         LOG.info("Expected: " + exp.getFile().getAbsolutePath());
 
                         if (operation.targetCache.hasConflict()) {
-                            LOG.severe("Merged result has conflicts");
+                            LOG.warning("Check: Output has conflict: " +
+                                    operation.getTarget().getFile().getAbsolutePath());
                         } else {
-                            ASTNodeArtifact target = operation.getTarget().createASTNodeArtifact(MergeScenario.TARGET);
+                            ASTNodeArtifact target = operation.getTarget().createASTNodeArtifactFromContent(MergeScenario.TARGET);
                             ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
 
                             // diff target expected
                             Matcher<ASTNodeArtifact> matcher = new Matcher<>(target, expected);
                             Matching<ASTNodeArtifact> m = matcher.match(context, Color.BLUE).get(target, expected).get();
                             if (!m.hasFullyMatched()) {
-                                LOG.severe("Merged result differs from expected: " +
+                                // maybe expected is wrong
+                                ASTNodeArtifact base = scenario.getBase().createASTNodeArtifact(MergeScenario.BASE);
+                                ASTNodeArtifact left = scenario.getLeft().createASTNodeArtifact(MergeScenario.LEFT);
+                                ASTNodeArtifact right = scenario.getRight().createASTNodeArtifact(MergeScenario.RIGHT);
+
+                                // diff base left
+                                Matcher<ASTNodeArtifact> matcher1 = new Matcher<>(base, left);
+                                Matching<ASTNodeArtifact> m1 = matcher1.match(context, Color.BLUE).get(base, left).get();
+                                if (m1.hasFullyMatched()) { // base = left, then expected output = right
+                                    LOG.warning("Check: Expected may be wrong: " + exp.getFile().getAbsolutePath() +
+                                            ", right shall be the expected output");
+
+                                    // diff target right
+                                    Matcher<ASTNodeArtifact> matcher2 = new Matcher<>(target, right);
+                                    Matching<ASTNodeArtifact> m2 = matcher2.match(context, Color.BLUE).get(target, right).get();
+                                    if (!m2.hasFullyMatched()) {
+                                        LOG.severe("Check: Output differs from right: " +
+                                                exp.getFile().getAbsolutePath() + ": " + m2);
+                                        System.out.println(right.dump(DumpMode.PLAINTEXT_TREE));
+                                        System.out.println(target.dump(DumpMode.PLAINTEXT_TREE));
+                                    }
+
+                                    return;
+                                }
+
+                                // diff base right
+                                Matcher<ASTNodeArtifact> matcher3 = new Matcher<>(base, right);
+                                Matching<ASTNodeArtifact> m3 = matcher3.match(context, Color.BLUE).get(base, right).get();
+                                if (m3.hasFullyMatched()) { // base = right, then expected output = left
+                                    LOG.warning("Check: Expected may be wrong: " + exp.getFile().getAbsolutePath() +
+                                            ", left shall be the expected output");
+
+                                    // diff target left
+                                    Matcher<ASTNodeArtifact> matcher4 = new Matcher<>(target, left);
+                                    Matching<ASTNodeArtifact> m4 = matcher4.match(context, Color.BLUE).get(target, left).get();
+                                    if (!m4.hasFullyMatched()) {
+                                        LOG.severe("Check: Output differs from left: " +
+                                                exp.getFile().getAbsolutePath() + ": " + m4);
+                                    }
+
+                                    return;
+                                }
+
+                                // now, please manually check
+                                LOG.severe("Check: Output differs from expected: " +
                                         exp.getFile().getAbsolutePath() + ": " + m);
                                 LOG.info("Expected:");
                                 if (LOG.isLoggable(INFO)) {
@@ -769,7 +814,8 @@ public class FileArtifact extends Artifact<FileArtifact> {
     }
 
     /**
-     * Create a temporary file artifact which has the `content` and write it to `TMP_FOLDER` on the file system.
+     * Create a temporary file artifact which has the pretty-print content and
+     * write it to `TMP_FOLDER` on the file system.
      * ASSUME that `this` is file and `content` is nonempty.
      *
      * @return the new temporary file artifact
@@ -777,21 +823,40 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public ASTNodeArtifact createASTNodeArtifact(Revision revision) {
         assert isFile();
 
-        Path path = Paths.get(TMP_FOLDER, revision.getName(), getFile().getName());
+        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getFile().getName());
+        File file = path.toFile();
         try {
-            OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(path.toFile()), UTF_8);
-            if (content == null) {
-                ASTNodeArtifact a = new ASTNodeArtifact(this);
-                out.write(a.prettyPrint());
-            } else {
-                out.write(content);
-            }
+            OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(file), UTF_8);
+            ASTNodeArtifact a = new ASTNodeArtifact(this);
+            out.write(a.prettyPrint());
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return new ASTNodeArtifact(new FileArtifact(revision, new File(path.toAbsolutePath().toString())));
+        return new ASTNodeArtifact(new FileArtifact(revision, file));
+    }
+
+    /**
+     * Create a temporary file artifact which has the `content` and write it to `TMP_FOLDER` on the file system.
+     * ASSUME that `this` is file and `content` is nonempty.
+     *
+     * @return the new temporary file artifact
+     */
+    public ASTNodeArtifact createASTNodeArtifactFromContent(Revision revision) {
+        assert isFile() && content != null;
+
+        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getFile().getName());
+        File file = path.toFile();
+        try {
+            OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(file), UTF_8);
+            out.write(content);
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new ASTNodeArtifact(new FileArtifact(revision, file));
     }
 
     /**
