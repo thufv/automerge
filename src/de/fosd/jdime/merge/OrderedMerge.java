@@ -35,6 +35,7 @@ import de.fosd.jdime.operations.MergeOperation;
 import javafx.util.Pair;
 
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,18 +47,14 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
 
     private String logprefix;
 
-    public Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> split(T pivot, ArtifactList<T> list) {
-        ArtifactList<T> up = new ArtifactList<>();
-        ArtifactList<T> down = new ArtifactList<>();
+    private Optional<T> bestMatch(T pivot, ArtifactList<T> list) {
         Iterator<T> iter = list.iterator();
-
-        T elem;
         T best = null;
         float bestPercentage = 0;
 
         while (iter.hasNext()) {
-            elem = iter.next();
-            float percentage = elem.matchPercentageWith(pivot);
+            T elem = iter.next();
+            float percentage = pivot.matchPercentageWith(elem);
             if (percentage > bestPercentage) {
                 bestPercentage = percentage;
                 best = elem;
@@ -67,22 +64,40 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
                 break;
             }
         }
-        if (best != null) {
-            LOG.log(LOG_LEVEL, "matched: " + best);
+
+        if (best == null) {
+            return Optional.empty();
+        }
+        return Optional.of(best);
+    }
+
+    public Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> split(T pivot, ArtifactList<T> targets,
+                                                                 ArtifactList<T> sources) {
+        ArtifactList<T> up = new ArtifactList<>();
+        ArtifactList<T> down = new ArtifactList<>();
+
+        T bestMatch = null;
+        Optional<T> best = bestMatch(pivot, targets);
+        if (best.isPresent()) {
+            Optional<T> source = bestMatch(best.get(), sources);
+            if (source.isPresent() && source.get().getId().equals(pivot.getId())) {
+                bestMatch = best.get();
+                LOG.log(LOG_LEVEL, "matched: " + bestMatch.getId());
+            }
         }
 
-        iter = list.iterator();
+        Iterator<T> iter = targets.iterator();
         boolean afterBest = false;
         while (iter.hasNext()) {
-            elem = iter.next();
-            if (elem == best) {
+            T elem = iter.next();
+            if (elem == bestMatch) {
                 afterBest = true;
             } else {
                 (afterBest ? down : up).add(elem);
             }
         }
 
-        return new Pair<>(new Pair<>(up, down), best);
+        return new Pair<>(new Pair<>(up, down), bestMatch);
     }
 
     public ArtifactList<T> merge2(ArtifactList<T> left, ArtifactList<T> right, Revision l, Revision r,
@@ -98,7 +113,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         }
 
         T pivot = left.head();
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> p = split(pivot, right);
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> p = split(pivot, right, left);
         left.dropHead();
 
         T matched = p.getValue();
@@ -163,8 +178,8 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         }
 
         T pivot = base.head();
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pl = split(pivot, left);
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(pivot, right);
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pl = split(pivot, left, base);
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(pivot, right, base);
         base.dropHead();
 
         T matchedLeft = pl.getValue();
@@ -298,7 +313,8 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         this.logprefix = operation.getId() + " - ";
 
         assert (left.matches(right));
-        assert (left.hasMatching(right)) && right.hasMatching(left);
+        assert (left.hasMatching(right) && right.hasMatching(left))
+                || (base.hasMatching(left) && base.hasMatching(right));
 
         LOG.finest(() -> {
             String name = getClass().getSimpleName();

@@ -77,7 +77,7 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
         Matcher<T> matcher = null;
         Matching<T> m;
 
-        // Finally, `left.hasMatching(r) && right.hasMatching(l)` must hold after matching.
+        // Finally, `left.hasMatching(right) && right.hasMatching(left)` must hold after matching.
 
         if (!left.hasMatching(r) && !right.hasMatching(l)) {
             if (!base.isEmpty()) {
@@ -121,10 +121,15 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
         }
 
         if (!((left.isChoice() || left.hasMatching(right)) && right.hasMatching(left))) {
-            LOG.severe(left.getId() + " and " + right.getId() + " have no matches.");
-            LOG.severe("left: " + root(left).dump(PLAINTEXT_TREE));
-            LOG.severe("right: " + root(right).dump(PLAINTEXT_TREE));
-            throw new RuntimeException();
+            if (!base.hasMatching(left) || !base.hasMatching(right)) {
+                LOG.severe(left.getId() + " and " + right.getId() + " have no matches.");
+                LOG.fine("left: " + root(left).dump(PLAINTEXT_TREE));
+                LOG.fine("right: " + root(right).dump(PLAINTEXT_TREE));
+                throw new RuntimeException();
+            } else {
+                LOG.warning(left.getId() + " and " + right.getId() + " have no matches, " +
+                        "but they both match with base");
+            }
         }
 
         // TODO figure out how to record matches in the target root node without this hack

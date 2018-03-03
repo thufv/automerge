@@ -670,7 +670,7 @@ public abstract class Artifact<T extends Artifact<T>> implements Comparable<T>, 
         if (!matches.containsKey(otherRev)) return 0;
 
         Matching<T> match = matches.get(otherRev);
-        if (match.getMatchingArtifact(this) == other) {
+        if (match.getMatchingArtifact(this).getId().equals(other.getId())) {
             return match.getPercentage();
         }
 
