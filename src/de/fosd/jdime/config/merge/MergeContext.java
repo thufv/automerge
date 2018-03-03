@@ -1352,8 +1352,15 @@ public class MergeContext implements Cloneable {
             }
 
             String expFileName = leftPath.substring(leftRootPath.length());
-            Path path = Paths.get(exp, expFileName);
-            return Optional.of(new FileArtifact(EXPECTED, path.toFile()));
+            String expFixedFileName = expFileName.substring(0, expFileName.length() - 5) +
+                    ".fixed.java";
+            File file = Paths.get(exp, expFixedFileName).toFile();
+            if (file.exists()) {
+                return Optional.of(new FileArtifact(EXPECTED, file));
+            }
+
+            file = Paths.get(exp, expFileName).toFile();
+            return Optional.of(new FileArtifact(EXPECTED, file));
         }
         return Optional.empty();
     }
