@@ -659,19 +659,19 @@ public abstract class Artifact<T extends Artifact<T>> implements Comparable<T>, 
     }
 
     /**
-     * Similar to `hasMatching`. If matching exists, returns its score. Else, returns 0.
+     * Similar to `hasMatching`. If matching exists, returns its matching percentage. Else, returns 0%.
      *
      * @param other
-     * @return matching score.
+     * @return matching percentage.
      * @author paul
      */
-    public final int matchScoreWith(T other) {
+    public final float matchPercentageWith(T other) {
         Revision otherRev = other.getRevision();
         if (!matches.containsKey(otherRev)) return 0;
 
         Matching<T> match = matches.get(otherRev);
         if (match.getMatchingArtifact(this) == other) {
-            return match.getScore();
+            return match.getPercentage();
         }
 
         return 0;

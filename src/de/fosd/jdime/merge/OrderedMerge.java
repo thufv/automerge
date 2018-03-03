@@ -53,14 +53,18 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
 
         T elem;
         T best = null;
-        int bestScore = 0;
+        float bestPercentage = 0;
 
         while (iter.hasNext()) {
             elem = iter.next();
-            int score = elem.matchScoreWith(pivot);
-            if (score > bestScore) {
-                bestScore = score;
+            float percentage = elem.matchPercentageWith(pivot);
+            if (percentage > bestPercentage) {
+                bestPercentage = percentage;
                 best = elem;
+            }
+
+            if (bestPercentage == 1) { // already overall best percentage
+                break;
             }
         }
         if (best != null) {

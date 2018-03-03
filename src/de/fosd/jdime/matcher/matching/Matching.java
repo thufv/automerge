@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.matcher.matching;
 
@@ -56,7 +56,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
     /**
      * Constructs a new <code>Matching</code> between the two given <code>T</code>s.
      *
-     * @param left the left <code>Artifact</code>
+     * @param left  the left <code>Artifact</code>
      * @param right the right <code>Artifact</code>
      * @param score the score of the matching
      */
@@ -68,7 +68,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
      * Constructs a new <code>Matching</code> between the two given <code>T</code>s.
      *
      * @param matchedArtifacts the two matched <code>Artifact</code>s
-     * @param score the score of the matching
+     * @param score            the score of the matching
      */
     public Matching(UnorderedTuple<T, T> matchedArtifacts, int score) {
         Objects.requireNonNull(matchedArtifacts);
@@ -83,8 +83,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
     /**
      * Performs a shallow copy (the matched <code>Artifact</code>s will not be copied).
      *
-     * @param toCopy
-     *         the <code>Matching</code> to copy
+     * @param toCopy the <code>Matching</code> to copy
      */
     public Matching(Matching<T> toCopy) {
         this.algorithm = toCopy.algorithm;
@@ -126,8 +125,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
      * <code>artifact</code> this method returns the other <code>Artifact</code> in this <code>Matching</code>.
      * Otherwise <code>null</code> is returned.
      *
-     * @param artifact
-     *         the <code>Artifact</code> whose match is to be returned
+     * @param artifact the <code>Artifact</code> whose match is to be returned
      * @return the match of the <code>artifact</code> or <code>null</code>
      */
     public T getMatchingArtifact(Artifact<T> artifact) {
@@ -141,10 +139,8 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
      * Replaces {@code toReplace} with {@code artifact} in the {@link Artifact Artifacts} matched by this
      * {@link Matching}. If {@code toReplace} is not part of this {@link Matching} no action is taken.
      *
-     * @param artifact
-     *         the {@link Artifact} to replace {@code toReplace} with
-     * @param toReplace
-     *         the {@link Artifact} to replace with {@code artifact}
+     * @param artifact  the {@link Artifact} to replace {@code toReplace} with
+     * @param toReplace the {@link Artifact} to replace with {@code artifact}
      */
     public void updateMatching(T artifact, T toReplace) {
 
@@ -154,7 +150,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
             matchedArtifacts.setY(artifact);
         } else {
             LOG.warning("Ignoring a call to Matching#updateMatching(T, T) as the Artifact to replace was not part of " +
-                        "the Matching.");
+                    "the Matching.");
             return;
         }
 
@@ -207,6 +203,7 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
 
             percentage = (2 * (float) score) / (lSize + rSize);
             fullyMatched = (2 * score) == (lSize + rSize);
+            if (fullyMatched) percentage = 1;
         }
     }
 
