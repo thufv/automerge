@@ -109,11 +109,10 @@ public class FileArtifact extends Artifact<FileArtifact> {
 
     /**
      * Default temporary folder.
-     * TODO: adapt different OS.
      *
      * @author paul
      */
-    public static final String TMP_FOLDER = "/tmp";
+    public static String TMP_FOLDER = "/tmp";
 
     /**
      * A <code>Comparator</code> to compare <code>FileArtifact</code>s by their <code>File</code>s. It considers
@@ -645,7 +644,12 @@ public class FileArtifact extends Artifact<FileArtifact> {
             try {
                 try {
                     strategy.merge(operation, context);
-                    LOG.info(operation.targetCache.hasConflict() ? "CONFLICT" : "NO CONFLICT");
+
+                    List<ASTNodeArtifact> nodes = operation.targetCache.collectConflictNodes();
+                    LOG.info(nodes.isEmpty() ? "NO CONFLICT" : "CONFLICT");
+                    if (LOG.isLoggable(INFO)) {
+                        nodes.forEach(ASTNodeArtifact::printConflict);
+                    }
 
                     context.getExpected(scenario).ifPresent(exp -> {
                         LOG.info("Expected: " + exp.getFile().getAbsolutePath());
@@ -705,14 +709,6 @@ public class FileArtifact extends Artifact<FileArtifact> {
                                 // now, please manually check
                                 LOG.severe("Check: Output differs from expected: " +
                                         exp.getFile().getAbsolutePath() + ": " + m);
-                                LOG.info("Expected:");
-                                if (LOG.isLoggable(INFO)) {
-                                    System.out.println(expected.prettyPrint());
-                                }
-                                LOG.info("Output:");
-                                if (LOG.isLoggable(INFO)) {
-                                    System.out.println(target.prettyPrint());
-                                }
                             }
                         }
                     });
@@ -803,6 +799,10 @@ public class FileArtifact extends Artifact<FileArtifact> {
         throw new NotYetImplementedException();
     }
 
+    private String getTempFileName() {
+        return getFile().getAbsolutePath().replace(java.io.File.separator.charAt(0), '.');
+    }
+
     /**
      * Create a temporary file artifact which has the pretty-print content and
      * write it to `TMP_FOLDER` on the file system.
@@ -813,7 +813,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public ASTNodeArtifact createASTNodeArtifact(Revision revision) {
         assert isFile();
 
-        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getFile().getName());
+        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getTempFileName());
         File file = path.toFile();
         try {
             OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(file), UTF_8);
@@ -836,7 +836,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     public ASTNodeArtifact createASTNodeArtifactFromContent(Revision revision) {
         assert isFile() && content != null;
 
-        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getFile().getName());
+        Path path = Paths.get(TMP_FOLDER, revision.getName() + "-" + getTempFileName());
         File file = path.toFile();
         try {
             OutputStreamWriter out = new OutputStreamWriter(FileUtils.openOutputStream(file), UTF_8);

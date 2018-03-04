@@ -44,6 +44,7 @@ import org.apache.commons.cli.ParseException;
 
 import static de.fosd.jdime.config.CommandLineConfigSource.CLI_LOG_LEVEL;
 import static de.fosd.jdime.config.CommandLineConfigSource.CLI_PROP_FILE;
+import static de.fosd.jdime.config.CommandLineConfigSource.CLI_TMP_FOLDER;
 
 /**
  * Contains the singleton <code>Config</code> instance containing the configuration options for JDime. All
@@ -239,6 +240,9 @@ public final class JDimeConfig extends Config {
 
         addSource(new SysEnvConfigSource(1));
         get(CLI_LOG_LEVEL).ifPresent(JDimeConfig::setLogLevel);
+
+        // set temp folder
+        get(CLI_TMP_FOLDER).ifPresent(tf -> FileArtifact.TMP_FOLDER = tf);
     }
 
     /**

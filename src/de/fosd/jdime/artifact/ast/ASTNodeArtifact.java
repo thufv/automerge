@@ -24,10 +24,7 @@
 package de.fosd.jdime.artifact.ast;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -625,5 +622,37 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         }
 
         return false;
+    }
+
+    /**
+     * Collect conflict nodes.
+     *
+     * @author paul
+     */
+    public List<ASTNodeArtifact> collectConflictNodes() {
+        List<ASTNodeArtifact> nodes = new ArrayList<>();
+        if (isConflict()) {
+            nodes.add(this);
+            return nodes;
+        }
+
+        int n = getNumChildren();
+        for (int i = 0; i < n; i++) {
+            nodes.addAll(getChild(i).collectConflictNodes());
+        }
+
+        return nodes;
+    }
+
+    /**
+     * Print conflict (if this artifact has conflict).
+     *
+     * @author paul
+     */
+    public void printConflict() {
+        System.out.println("--- left ---");
+        System.out.println(left.prettyPrint());
+        System.out.println("--- right---");
+        System.out.println(right.prettyPrint());
     }
 }

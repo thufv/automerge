@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.config;
 
@@ -82,6 +82,13 @@ public class CommandLineConfigSource extends ConfigSource {
      * @author paul
      */
     public static final String CLI_EXPECTED = "e";
+
+    /**
+     * Temporary folder.
+     *
+     * @author paul
+     */
+    public static final String CLI_TMP_FOLDER = "t";
 
     public static final String ARG_LIST = "ARG_LIST";
     public static final String ARG_LIST_SEP = ",";
@@ -207,13 +214,13 @@ public class CommandLineConfigSource extends ConfigSource {
             String strategies = String.join(", ", MergeStrategy.listStrategies());
 
             o = Option.builder(CLI_MODE)
-                            .longOpt("mode")
-                            .desc("Set the mode to one of (" + strategies + ") or a comma separated combination " +
-                                    "thereof. In the latter case the strategies will be executed in order until one " +
-                                    "does not produce conflicts.")
-                            .hasArg()
-                            .argName("mode")
-                            .build();
+                    .longOpt("mode")
+                    .desc("Set the mode to one of (" + strategies + ") or a comma separated combination " +
+                            "thereof. In the latter case the strategies will be executed in order until one " +
+                            "does not produce conflicts.")
+                    .hasArg()
+                    .argName("mode")
+                    .build();
 
             options.addOption(o);
         }
@@ -302,10 +309,10 @@ public class CommandLineConfigSource extends ConfigSource {
             String modes = Arrays.stream(CMMode.values()).map(CMMode::name).reduce("", (s, s2) -> s + " " + s2);
 
             o = Option.builder(CLI_CM)
-                            .longOpt("cost-model-matcher")
-                            .desc("Sets the cost model matcher operation mode to one of " + modes)
-                            .hasArg(true)
-                            .build();
+                    .longOpt("cost-model-matcher")
+                    .desc("Sets the cost model matcher operation mode to one of " + modes)
+                    .hasArg(true)
+                    .build();
 
             options.addOption(o);
         }
@@ -358,7 +365,15 @@ public class CommandLineConfigSource extends ConfigSource {
 
         o = Option.builder(CLI_EXPECTED)
                 .longOpt("expected")
-                .desc("Expected artifact to compare with")
+                .desc("Expected artifact to compare with.")
+                .hasArg(true)
+                .build();
+
+        options.addOption(o);
+
+        o = Option.builder(CLI_TMP_FOLDER)
+                .longOpt("tmp-folder")
+                .desc("Temporary folder to write some generated sources, default /tmp.")
                 .hasArg(true)
                 .build();
 
