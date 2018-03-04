@@ -94,7 +94,7 @@ public final class Main {
     private static final int EXIT_ABORTED = 2;
     private static final int EXIT_FAILURE = 1;
 
-    private static JDimeConfig config;
+    public static JDimeConfig config;
 
     /**
      * Prevent instantiation.

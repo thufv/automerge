@@ -23,38 +23,38 @@
  */
 package de.fosd.jdime.artifact.ast;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import de.fosd.jdime.Main;
 import de.fosd.jdime.artifact.Artifact;
 import de.fosd.jdime.artifact.ArtifactList;
 import de.fosd.jdime.artifact.Artifacts;
 import de.fosd.jdime.artifact.file.FileArtifact;
+import de.fosd.jdime.config.JDimeConfig;
 import de.fosd.jdime.config.merge.MergeContext;
 import de.fosd.jdime.config.merge.MergeScenario;
 import de.fosd.jdime.config.merge.Revision;
 import de.fosd.jdime.execption.AbortException;
+import de.fosd.jdime.matcher.Matcher;
+import de.fosd.jdime.matcher.matching.Color;
+import de.fosd.jdime.matcher.matching.Matchings;
 import de.fosd.jdime.merge.Merge;
 import de.fosd.jdime.operations.ConflictOperation;
 import de.fosd.jdime.operations.MergeOperation;
 import de.fosd.jdime.operations.Operation;
 import de.fosd.jdime.stats.KeyEnums;
 import de.fosd.jdime.stats.MergeScenarioStatistics;
-import org.extendj.ast.ASTNode;
-import org.extendj.ast.Block;
-import org.extendj.ast.ClassDecl;
-import org.extendj.ast.ConstructorDecl;
-import org.extendj.ast.ImportDecl;
-import org.extendj.ast.InterfaceDecl;
-import org.extendj.ast.Literal;
-import org.extendj.ast.MethodDecl;
-import org.extendj.ast.Program;
-import org.extendj.ast.TryStmt;
+import javafx.util.Pair;
+import org.extendj.ast.*;
+import synthesis.SynthesisContext;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static de.fosd.jdime.config.CommandLineConfigSource.CLI_TOP_K;
 import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
 
 /**
@@ -656,5 +656,161 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         System.out.println(left.prettyPrint());
         System.out.println("--- right---");
         System.out.println(right.prettyPrint());
+    }
+
+    /**
+     * Solve conflicts with synthesis.
+     *
+     * @param nodes    conflict nodes
+     * @param context  merge context
+     * @param scenario merge scenario
+     */
+    public void solveConflicts(List<ASTNodeArtifact> nodes,
+                               MergeContext context, MergeScenario<FileArtifact> scenario) {
+        JDimeConfig config = Main.config;
+        int maxK = config.getInteger(CLI_TOP_K).orElse(32);
+
+        Optional<FileArtifact> expFile = context.getExpected(scenario);
+        if (expFile.isPresent()) {
+            FileArtifact expected = expFile.get();
+            ASTNodeArtifact expAST = new ASTNodeArtifact(expected);
+
+            Matcher<ASTNodeArtifact> matcher = new Matcher<>(this, expAST);
+            Matchings<ASTNodeArtifact> matchings = matcher.match(context, Color.GREEN);
+
+            for (ASTNodeArtifact node : nodes) {
+                Optional<ASTNodeArtifact> expRootOpt = matchings.queryRightByLeftId(node.getParent().getId());
+                if (!expRootOpt.isPresent()) {
+                    LOG.severe("expected answer is missing in: " + expected.getFile().getAbsolutePath());
+                    System.out.println(node.getParent().dump(PLAINTEXT_TREE));
+                    return;
+                }
+
+                ASTNodeArtifact expRoot = expRootOpt.get();
+                int index = node.getParent().indexOf(node);
+                if (index >= expRoot.getNumChildren()) {
+                    LOG.severe("expected child (#" + index + ") is missing in: " +
+                            expected.getFile().getAbsolutePath());
+                    System.out.println(expRoot.dump(PLAINTEXT_TREE));
+                    System.out.println();
+                    System.out.println(node.getParent().dump(PLAINTEXT_TREE));
+                    return;
+                }
+
+                ASTNodeArtifact exp = node.isList() ?
+                        expRoot.wrapListArtifact(index, node) :
+                        expRoot.getChild(index);
+
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info("expected");
+                    System.out.println(exp.prettyPrint());
+                }
+
+                int depth = 2;
+                int k = 0;
+                int totalSteps = 0;
+                boolean found = false;
+
+                long startTime = System.currentTimeMillis();
+
+                while (depth < 5) {
+                    LOG.info("Max depth: " + depth);
+                    SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
+                    Pair<Boolean, Integer> ret = ctx.check(exp, maxK);
+                    found = ret.getKey();
+                    k = ret.getValue();
+                    totalSteps += k;
+                    if (found) {
+                        break;
+                    } else {
+                        depth++;
+                    }
+                }
+
+                long runtime = System.currentTimeMillis() - startTime;
+
+                LOG.info(() -> String.format("Synthesis time: %d ms.", runtime));
+            }
+        } else {
+            for (ASTNodeArtifact node : nodes) {
+                SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, 2);
+                ctx.take(maxK);
+            }
+        }
+    }
+
+    /**
+     * Take children starting at index `from` and form a new ASTNodeArtifact.
+     *
+     * @param from starting index
+     * @param src  source artifact
+     * @return the wrapped ASTNodeArtifact
+     */
+    public ASTNodeArtifact wrapListArtifact(int from, ASTNodeArtifact src) {
+        ASTNodeArtifact dst = src.copy();
+        dst.clearChildren();
+        for (int i = from; i < getNumChildren(); i++) {
+            dst.addChild(getChild(i));
+        }
+
+        return dst;
+    }
+
+    private boolean root = false;
+
+    public void setRoot() {
+        root = true;
+    }
+
+    public boolean isRoot() {
+        return root;
+    }
+
+    public final boolean isLeaf() {
+        return getChildren().isEmpty();
+    }
+
+    public final boolean isLeafNode() {
+        if (astnode instanceof Dot) return true;
+        if (astnode instanceof AssignSimpleExpr) return true;
+
+        return isLeaf();
+    }
+
+    /**
+     * Get kind name.
+     *
+     * @return
+     * @author paul
+     */
+    public String kind(String parentName) {
+        if (astnode instanceof Block || astnode instanceof org.extendj.ast.List) {
+            return parentName + "." + astnode.getClass().getName();
+        }
+
+        return astnode.getClass().getName();
+    }
+
+    public String[] abstractArgumentNames(String parentName) {
+        if (isList()) {
+            String[] names = new String[1];
+            names[0] = kind(parentName) + ".arg.list";
+            return names;
+        }
+
+        int n = getNumChildren();
+        String[] names = new String[n];
+        for (int i = 0; i < n; i++) {
+            names[i] = kind(parentName) + ".arg" + i;
+        }
+        return names;
+    }
+
+    public boolean eq(ASTNodeArtifact that) {
+        return astnode.dumpTree().equals(that.astnode.dumpTree());
+    }
+
+    public String dumpString() {
+        return astnode.getClass().getName();
     }
 }

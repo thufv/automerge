@@ -66,6 +66,11 @@ public abstract class Artifact<T extends Artifact<T>> implements Comparable<T>, 
     private List<T> children;
 
     /**
+     * Base side of a conflict.
+     */
+    protected T base;
+
+    /**
      * Left side of a conflict.
      */
     protected T left;

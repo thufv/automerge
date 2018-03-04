@@ -291,4 +291,31 @@ public class Matchings<T extends Artifact<T>> extends HashSet<Matching<T>> {
 
         return res;
     }
+
+    /**
+     * Returns the right artifact of the nearest matching found where the corresponding artifact has id `id`.
+     *
+     * @param id left artifact id.
+     * @return the corresponding right artifact.
+     * @author paul
+     */
+    public Optional<T> queryRightByLeftId(String id) {
+        T right = null;
+        int minDis = Integer.MAX_VALUE;
+
+        for (Matching<T> m : this) {
+            if (m.getLeft().getId().equals(id)) {
+                int dis = Math.abs(m.getRight().getNumber() - m.getLeft().getNumber());
+                if (dis < minDis) {
+                    minDis = dis;
+                    right = m.getRight();
+                }
+            }
+        }
+
+        if (right == null) {
+            return Optional.empty();
+        }
+        return Optional.of(right);
+    }
 }

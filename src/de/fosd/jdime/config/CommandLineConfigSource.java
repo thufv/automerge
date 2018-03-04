@@ -90,6 +90,21 @@ public class CommandLineConfigSource extends ConfigSource {
      */
     public static final String CLI_TMP_FOLDER = "t";
 
+    /**
+     * Apply synthesis when conflicts occur.
+     *
+     * @author paul
+     */
+    public static final String CLI_SYNTHESIS = "S";
+
+    /**
+     * Top `k`.
+     * -K, --top-k
+     *
+     * @author paul
+     */
+    public static final String CLI_TOP_K = "K";
+
     public static final String ARG_LIST = "ARG_LIST";
     public static final String ARG_LIST_SEP = ",";
 
@@ -374,6 +389,22 @@ public class CommandLineConfigSource extends ConfigSource {
         o = Option.builder(CLI_TMP_FOLDER)
                 .longOpt("tmp-folder")
                 .desc("Temporary folder to write some generated sources, default /tmp.")
+                .hasArg(true)
+                .build();
+
+        options.addOption(o);
+
+        o = Option.builder(CLI_SYNTHESIS)
+                .longOpt("synthesis")
+                .desc("Enable systhesis when conflicts occur.")
+                .hasArg(true)
+                .build();
+
+        options.addOption(o);
+
+        o = Option.builder(CLI_TOP_K)
+                .longOpt("top-k")
+                .desc("Check top k ranked programs in systhesis phase, default 32.")
                 .hasArg(true)
                 .build();
 

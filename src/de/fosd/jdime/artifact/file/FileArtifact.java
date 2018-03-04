@@ -46,10 +46,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
+import de.fosd.jdime.Main;
 import de.fosd.jdime.artifact.Artifact;
 import de.fosd.jdime.artifact.ArtifactList;
 import de.fosd.jdime.artifact.Artifacts;
 import de.fosd.jdime.artifact.ast.ASTNodeArtifact;
+import de.fosd.jdime.config.JDimeConfig;
 import de.fosd.jdime.config.merge.MergeContext;
 import de.fosd.jdime.config.merge.MergeScenario;
 import de.fosd.jdime.config.merge.Revision;
@@ -72,6 +74,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.CompositeFileComparator;
 
+import static de.fosd.jdime.config.CommandLineConfigSource.CLI_SYNTHESIS;
 import static de.fosd.jdime.stats.MergeScenarioStatus.FAILED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
@@ -657,6 +660,20 @@ public class FileArtifact extends Artifact<FileArtifact> {
                         if (operation.targetCache.hasConflict()) {
                             LOG.warning("Check: Output has conflict: " +
                                     operation.getTarget().getFile().getAbsolutePath());
+
+                            if (Main.config.getBoolean(CLI_SYNTHESIS).isPresent()) { // synthesis
+                                try {
+                                    operation.targetCache.solveConflicts(nodes, context, scenario);
+                                } catch (Throwable e) {
+                                    LOG.log(SEVERE, e, () -> {
+                                        String ls = System.lineSeparator();
+                                        String scStr = scenario.toString(ls, true);
+                                        return String.format("Exception while synthesizing%n%s", scStr);
+                                    });
+                                    e.printStackTrace();
+                                }
+                            }
+
                         } else {
                             ASTNodeArtifact target = operation.getTarget().createASTNodeArtifactFromContent(MergeScenario.TARGET);
                             ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
