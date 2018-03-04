@@ -1356,6 +1356,7 @@ public class MergeContext implements Cloneable {
                     ".fixed.java";
             File file = Paths.get(exp, expFixedFileName).toFile();
             if (file.exists()) {
+                LOG.warning("Check: Fixed file used: " + file.getAbsolutePath());
                 return Optional.of(new FileArtifact(EXPECTED, file));
             }
 

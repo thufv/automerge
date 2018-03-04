@@ -85,6 +85,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
             T elem = iter.next();
             if (elem == match) {
                 after = true;
+                LOG.log(LOG_LEVEL, "matched: " + elem.getId());
             } else {
                 (after ? down : up).add(elem);
             }
