@@ -494,6 +494,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                 /* FIXME: this is actually a bug.
                  * JDime should use an empty ASTNode with the correct revision information.
                  */
+                left = new ASTNodeArtifact(MergeScenario.LEFT);
             }
 
             if (right != null) {
@@ -503,6 +504,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                 /* FIXME: this is actually a bug.
                  * JDime should use an empty ASTNode with the correct revision information.
                  */
+                right = new ASTNodeArtifact(MergeScenario.RIGHT);
             }
         }
 
