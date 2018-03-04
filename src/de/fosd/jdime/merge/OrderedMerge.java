@@ -29,6 +29,7 @@ import de.fosd.jdime.config.merge.MergeContext;
 import de.fosd.jdime.config.merge.MergeScenario;
 import de.fosd.jdime.config.merge.MergeType;
 import de.fosd.jdime.config.merge.Revision;
+import de.fosd.jdime.matcher.matching.Matching;
 import de.fosd.jdime.operations.AddOperation;
 import de.fosd.jdime.operations.ConflictOperation;
 import de.fosd.jdime.operations.MergeOperation;
@@ -71,33 +72,25 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         return Optional.of(best);
     }
 
-    public Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> split(T pivot, ArtifactList<T> targets,
-                                                                 ArtifactList<T> sources) {
+    public Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> split(T pivot, ArtifactList<T> list, Revision r) {
         ArtifactList<T> up = new ArtifactList<>();
         ArtifactList<T> down = new ArtifactList<>();
 
-        T bestMatch = null;
-        Optional<T> best = bestMatch(pivot, targets);
-        if (best.isPresent()) {
-            Optional<T> source = bestMatch(best.get(), sources);
-            if (source.isPresent() && source.get().getId().equals(pivot.getId())) {
-                bestMatch = best.get();
-                LOG.log(LOG_LEVEL, "matched: " + bestMatch.getId());
-            }
-        }
+        Matching<T> m =  pivot.getMatching(r);
+        T match = (m == null) ? null : m.getRight();
 
-        Iterator<T> iter = targets.iterator();
-        boolean afterBest = false;
+        Iterator<T> iter = list.iterator();
+        boolean after = false;
         while (iter.hasNext()) {
             T elem = iter.next();
-            if (elem == bestMatch) {
-                afterBest = true;
+            if (elem == match) {
+                after = true;
             } else {
-                (afterBest ? down : up).add(elem);
+                (after ? down : up).add(elem);
             }
         }
 
-        return new Pair<>(new Pair<>(up, down), bestMatch);
+        return new Pair<>(new Pair<>(up, down), after ? match : null);
     }
 
     public ArtifactList<T> merge2(ArtifactList<T> left, ArtifactList<T> right, Revision l, Revision r,
@@ -113,7 +106,7 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         }
 
         T pivot = left.head();
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> p = split(pivot, right, left);
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> p = split(pivot, right, r);
         left.dropHead();
 
         T matched = p.getValue();
@@ -178,83 +171,84 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         }
 
         T pivot = base.head();
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pl = split(pivot, left, base);
-        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(pivot, right, base);
+        Revision b = pivot.getRevision();
         base.dropHead();
 
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pl = split(pivot, left, l);
         T matchedLeft = pl.getValue();
-        T matchedRight = pr.getValue();
-        if (matchedLeft == null && matchedRight == null) {
-            LOG.log(LOG_LEVEL, "merge3: left, right are both NOT matched with " + pivot);
-            return merge3(base, left, right, l, r, target, context, reversed);
+
+        if (matchedLeft == null) {
+            Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(pivot, right, r);
+            T matchedRight = pr.getValue();
+
+            if (matchedRight == null) {
+                LOG.log(LOG_LEVEL, "merge3: left, right are both NOT matched with " + pivot);
+                // pivot will be deleted
+                return merge3(base, left, right, l, r, target, context, reversed);
+            }
+
+            // matchedRight != null
+            LOG.log(LOG_LEVEL, "merge3: only right is matched with " + pivot);
+
+            ArtifactList<T> left1 = pl.getKey().getKey();
+            ArtifactList<T> left2 = pl.getKey().getValue();
+            ArtifactList<T> right1 = pr.getKey().getKey();
+            ArtifactList<T> right2 = pr.getKey().getValue();
+            assert left2.isEmpty();
+            return merge3Helper(pivot, matchedRight, base, right1, right2, left1, r, l, target, context, !reversed);
         }
 
+        // matchedLeft != null
+        Pair<Pair<ArtifactList<T>, ArtifactList<T>>, T> pr = split(matchedLeft, right, r);
+        T matchedRight = pr.getValue();
         ArtifactList<T> left1 = pl.getKey().getKey();
         ArtifactList<T> left2 = pl.getKey().getValue();
-        ArtifactList<T> right1 = pr.getKey().getKey();
-        ArtifactList<T> right2 = pr.getKey().getValue();
-        Revision b = pivot.getRevision();
 
-        if (matchedLeft != null && matchedRight != null && (
-                (matchedLeft.hasMatching(matchedRight) && matchedRight.hasMatching(matchedLeft))
-                        || !matchedLeft.hasChanges(b) || !matchedRight.hasChanges(b)
-        )) {
-            // NOTE: even if left is matched with base, and right is matched with base,
-            // it is possible that left and right are NOT matched with each other.
-            // Therefore, we have to check if left and right are matched with each other,
-            // or, either left or right is exactly the same with base.
-            // Otherwise, (pivot, matchedLeft, matchedRight) can NOT become a proper merge triple,
-            // and we have to ignore `matchedRight`.
-
-            LOG.log(LOG_LEVEL, "merge3: left, right are both matched with " + pivot);
-
-            ArtifactList<T> rightRest = merge2(left1, right1, l, r, target, context, reversed);
-
-            // add rightRest
-            for (T rightChild : rightRest) {
-                AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
-                rightChild.setMerged();
-                addOp.apply(context);
-
-                LOG.log(LOG_LEVEL, "merge3: add: " + rightChild);
-            }
-
-            LOG.log(LOG_LEVEL, "normally 3-way merge: " + matchedLeft + " <-> " + matchedRight);
-            // merge (pivot, matchedLeft, matchedRight)
-            T leftT = !reversed ? matchedLeft : matchedRight;
-            T rightT = !reversed ? matchedRight : matchedLeft;
-            String leftName = !reversed ? l.getName() : r.getName();
-            String rightName = !reversed ? r.getName() : l.getName();
-
-            MergeScenario<T> childTriple = new MergeScenario<>(MergeType.THREEWAY, leftT, pivot, rightT);
-            T targetChild = leftT.copy();
-            target.addChild(targetChild);
-            if (targetChild != null) {
-                assert targetChild.exists();
-                targetChild.clearChildren();
-            }
-
-            MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
-            leftT.setMerged();
-            rightT.setMerged();
-            mergeOp.apply(context);
-            // done
-
-            return merge3(base, left2, right2, l, r, target, context, reversed);
-        }
-
-        if (matchedLeft != null) {
+        if (matchedRight == null) {
             LOG.log(LOG_LEVEL, "merge3: only left is matched with " + pivot);
-            // Either `matchedRight == null` or (`matchedRight != null` but
-            // `matchedLeft.hasMatching(matchedRight) && matchedRight.hasMatching(matchedLeft)`).
-            // No matter which one is hold, the whole `right` is remained to be matched.
-
             return merge3Helper(pivot, matchedLeft, base, left1, left2, right, l, r, target, context, reversed);
         }
 
-        LOG.log(LOG_LEVEL, "merge3: only right is matched with " + pivot);
-        assert left2.isEmpty();
-        return merge3Helper(pivot, matchedRight, base, right1, right2, left1, r, l, target, context, !reversed);
+        // matchedRight != null
+        ArtifactList<T> right1 = pr.getKey().getKey();
+        ArtifactList<T> right2 = pr.getKey().getValue();
+
+        LOG.log(LOG_LEVEL, "merge3: left, right are both matched with " + pivot +
+                ", and they are matched with each other");
+
+        ArtifactList<T> rightRest = merge2(left1, right1, l, r, target, context, reversed);
+
+        // add rightRest
+        for (T rightChild : rightRest) {
+            AddOperation<T> addOp = new AddOperation<>(rightChild, target, r.getName());
+            rightChild.setMerged();
+            addOp.apply(context);
+
+            LOG.log(LOG_LEVEL, "merge3: add: " + rightChild);
+        }
+
+        LOG.log(LOG_LEVEL, "normally 3-way merge: " + matchedLeft + " <-> " + matchedRight);
+        // merge (pivot, matchedLeft, matchedRight)
+        T leftT = !reversed ? matchedLeft : matchedRight;
+        T rightT = !reversed ? matchedRight : matchedLeft;
+        String leftName = !reversed ? l.getName() : r.getName();
+        String rightName = !reversed ? r.getName() : l.getName();
+
+        MergeScenario<T> childTriple = new MergeScenario<>(MergeType.THREEWAY, leftT, pivot, rightT);
+        T targetChild = leftT.copy();
+        target.addChild(targetChild);
+        if (targetChild != null) {
+            assert targetChild.exists();
+            targetChild.clearChildren();
+        }
+
+        MergeOperation<T> mergeOp = new MergeOperation<>(childTriple, targetChild);
+        leftT.setMerged();
+        rightT.setMerged();
+        mergeOp.apply(context);
+        // done
+
+        return merge3(base, left2, right2, l, r, target, context, reversed);
     }
 
     public ArtifactList<T> merge3Helper(T pivot, T matchedLeft, ArtifactList<T> baseRest,

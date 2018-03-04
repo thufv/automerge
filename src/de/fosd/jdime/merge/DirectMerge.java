@@ -64,7 +64,7 @@ public class DirectMerge<T extends Artifact<T>> implements MergeInterface<T> {
         logprefix = operation.getId() + " - ";
 
         assert (left.matches(right));
-        assert (left.hasMatching(right) && right.hasMatching(left));
+//        assert (left.hasMatching(right) && right.hasMatching(left));
 
         assert (left.getNumChildren() == right.getNumChildren());
 
