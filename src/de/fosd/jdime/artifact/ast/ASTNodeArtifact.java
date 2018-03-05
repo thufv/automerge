@@ -689,7 +689,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             for (ASTNodeArtifact node : nodes) {
                 Optional<ASTNodeArtifact> expRootOpt = matchings.queryRightByLeftId(node.getParent().getId());
                 if (!expRootOpt.isPresent()) {
-                    LOG.severe("expected answer is missing in: " + expected.getFile().getAbsolutePath());
+                    LOG.severe("Synthesis: Expected answer is missing in: " +
+                            expected.getFile().getAbsolutePath());
                     System.out.println(node.getParent().dump(PLAINTEXT_TREE));
                     return;
                 }
@@ -697,7 +698,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                 ASTNodeArtifact expRoot = expRootOpt.get();
                 int index = node.getParent().indexOf(node);
                 if (index >= expRoot.getNumChildren()) {
-                    LOG.severe("expected child (#" + index + ") is missing in: " +
+                    LOG.severe("Synthesis: Expected child (#" + index + ") is missing in: " +
                             expected.getFile().getAbsolutePath());
                     System.out.println(expRoot.dump(PLAINTEXT_TREE));
                     System.out.println();
@@ -709,8 +710,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                         expRoot.wrapListArtifact(index, node) :
                         expRoot.getChild(index);
 
+                LOG.info("Synthesis: Expected");
                 if (LOG.isLoggable(Level.INFO)) {
-                    LOG.info("expected");
                     System.out.println(exp.prettyPrint());
                 }
 
@@ -722,7 +723,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                 long startTime = System.currentTimeMillis();
 
                 while (depth < 5) {
-                    LOG.info("Max depth: " + depth);
+                    LOG.info("Synthesis: Max depth: " + depth);
                     SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
                     Pair<Boolean, Integer> ret = ctx.check(exp, maxK);
                     found = ret.getKey();

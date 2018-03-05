@@ -660,22 +660,6 @@ public class FileArtifact extends Artifact<FileArtifact> {
                         if (operation.targetCache.hasConflict()) {
                             LOG.warning("Check: Output has conflict: " +
                                     operation.getTarget().getFile().getAbsolutePath());
-
-                            if (Main.config.getBoolean(CLI_SYNTHESIS).isPresent()) { // synthesis
-                                LOG.info("Synthesis");
-
-                                try {
-                                    operation.targetCache.solveConflicts(nodes, context, scenario);
-                                } catch (Throwable e) {
-                                    LOG.log(SEVERE, e, () -> {
-                                        String ls = System.lineSeparator();
-                                        String scStr = scenario.toString(ls, true);
-                                        return String.format("Exception while synthesizing%n%s", scStr);
-                                    });
-                                    e.printStackTrace();
-                                }
-                            }
-
                         } else {
                             ASTNodeArtifact target = operation.getTarget().createASTNodeArtifactFromContent(MergeScenario.TARGET);
                             ASTNodeArtifact expected = exp.createASTNodeArtifact(MergeContext.EXPECTED);
@@ -731,6 +715,19 @@ public class FileArtifact extends Artifact<FileArtifact> {
                             }
                         }
                     });
+
+                    if (Main.config.getBoolean(CLI_SYNTHESIS).isPresent()) { // synthesis
+                        try {
+                            operation.targetCache.solveConflicts(nodes, context, scenario);
+                        } catch (Throwable e) {
+                            LOG.log(SEVERE, e, () -> {
+                                String ls = System.lineSeparator();
+                                String scStr = scenario.toString(ls, true);
+                                return String.format("Exception while synthesizing%n%s", scStr);
+                            });
+                            e.printStackTrace();
+                        }
+                    }
                 } catch (Throwable e) {
                     if (context.hasStatistics()) {
                         context.getStatistics().getScenarioStatistics(scenario).setStatus(FAILED);
