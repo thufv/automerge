@@ -56,6 +56,8 @@ import java.util.logging.Logger;
 
 import static de.fosd.jdime.config.CommandLineConfigSource.CLI_TOP_K;
 import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
+import static de.fosd.jdime.util.SuccessLevel.SUCCESS;
+import static java.util.logging.Level.SEVERE;
 
 /**
  * @author Olaf Lessenich
@@ -723,13 +725,13 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
                 long startTime = System.currentTimeMillis();
 
                 while (depth < 5) {
-                    LOG.info("Synthesis: Max depth: " + depth);
                     SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
                     Pair<Boolean, Integer> ret = ctx.check(exp, maxK);
                     found = ret.getKey();
                     k = ret.getValue();
                     totalSteps += k;
                     if (found) {
+                        found = true;
                         break;
                     } else {
                         depth++;
@@ -738,7 +740,14 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
                 long runtime = System.currentTimeMillis() - startTime;
 
-                LOG.info(() -> String.format("Synthesis time: %d ms.", runtime));
+                LOG.info("Synthesis: Searched depth: " + depth);
+                LOG.info("Synthesis: Searched total steps: " + totalSteps);
+                if (found) {
+                    LOG.log(SUCCESS, "Synthesis: FOUND");
+                } else {
+                    LOG.log(SEVERE, "Synthesis: NOT FOUND");
+                }
+                LOG.info(String.format("Synthesis time: %d ms.", runtime));
             }
         } else {
             for (ASTNodeArtifact node : nodes) {

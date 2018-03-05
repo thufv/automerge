@@ -38,7 +38,6 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
 
   case class NonTerm(name: String) extends Symbol with Ordered[NonTerm] {
     lazy val programs: Stream[ASTNodeArtifact] = {
-      LOG.fine(s"compute programs: $this")
 
       val right = grammar(this)
       val symbols = right.symbols.toList
@@ -84,7 +83,6 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
 
   case class Concrete(tree: ASTNodeArtifact) extends Term {
     lazy val programs: Stream[ASTNodeArtifact] = {
-      LOG.fine(s"compute programs: $this")
       Stream(tree)
     }
 
@@ -94,7 +92,6 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   case class Abstract(constructor: ArtifactList[ASTNodeArtifact] => ASTNodeArtifact,
                       name: String, children: Array[NonTerm]) extends Term {
     lazy val programs: Stream[ASTNodeArtifact] = {
-      LOG.fine(s"compute programs: $this")
       val programsOfArgs = children.map(_.programs).toList
       val argGroups = permutation(programsOfArgs)
       argGroups
@@ -242,10 +239,10 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
         lt(label1, label2)
     }
 
-    LOG.fine("Grammar:")
-    if (LOG.isLoggable(Level.FINE)) println(grammar.prettyPrint)
-    LOG.fine("Labels:")
-    if (LOG.isLoggable(Level.FINE)) println(labels.prettyPrint)
+    LOG.finer("Grammar:")
+    if (LOG.isLoggable(Level.FINER)) println(grammar.prettyPrint)
+    LOG.finer("Labels:")
+    if (LOG.isLoggable(Level.FINER)) println(labels.prettyPrint)
 
     start.programs
   }
@@ -253,7 +250,7 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   def take(k: Int): Unit = {
     programs.take(k).zipWithIndex.foreach {
       case (x, i) =>
-        LOG.info(s"Synthesis: Candidate ${i + 1}:\n${x.prettyPrint}")
+        LOG.fine(s"Synthesis: Candidate ${i + 1}:\n${x.prettyPrint}")
     }
   }
 
@@ -264,18 +261,13 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       if (ps.isEmpty || k > maxk) NotFound(Math.min(k, maxk))
       else {
         val p = ps.head
-        LOG.info(s"Synthesis: Check $k:\n${p.prettyPrint}")
+        LOG.fine(s"Synthesis: Check $k:\n${p.prettyPrint}")
         if (p.eq(exp)) Found(k)
         else loop(ps.tail, k + 1)
       }
     }
 
-    val r = loop(programs)
-    LOG.info(r match {
-      case Found(k) => s"Synthesis: Found: k = $k"
-      case NotFound(_) => "Synthesis: Not found"
-    })
-    r match {
+    loop(programs) match {
       case Found(k) => new javafx.util.Pair[java.lang.Boolean, Integer](true, k)
       case NotFound(k) => new javafx.util.Pair[java.lang.Boolean, Integer](false, k)
     }

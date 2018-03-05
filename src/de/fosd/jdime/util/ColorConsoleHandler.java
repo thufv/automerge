@@ -4,6 +4,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import static de.fosd.jdime.util.SuccessLevel.SUCCESS;
 import static java.util.logging.Level.*;
 
 public class ColorConsoleHandler extends ConsoleHandler {
@@ -32,6 +33,10 @@ public class ColorConsoleHandler extends ConsoleHandler {
 
         if (level.equals(CONFIG)) {
             return ANSI_PURPLE;
+        }
+
+        if (level.equals(SUCCESS)) {
+            return ANSI_GREEN;
         }
 
         return ANSI_WHITE;
