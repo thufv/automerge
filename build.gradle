@@ -33,6 +33,7 @@ plugins {
     id "org.ajoberstar.grgit" version "2.1.0"
     id "com.github.hierynomus.license" version "0.14.0"
     id "com.scuilion.syntastic" version "0.3.8"
+    id 'scala'
 }
 
 tasks.withType(JavaCompile) {
@@ -45,8 +46,11 @@ javadoc {
 
 sourceSets {
     main {
-        java {
+        scala {
             srcDir 'src'
+        }
+        java {
+            srcDirs = []
         }
         resources {
             srcDir 'res'
@@ -77,6 +81,8 @@ dependencies {
     compile project(':JNativeMerge')
     compile files('lib/extendj.jar')
     testCompile 'junit:junit:4.12'
+
+    compile 'org.scala-lang:scala-library:2.12.4'
 }
 
 task wrapper(type: Wrapper) {

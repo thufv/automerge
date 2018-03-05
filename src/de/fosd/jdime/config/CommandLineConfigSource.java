@@ -397,7 +397,7 @@ public class CommandLineConfigSource extends ConfigSource {
         o = Option.builder(CLI_SYNTHESIS)
                 .longOpt("synthesis")
                 .desc("Enable systhesis when conflicts occur.")
-                .hasArg(true)
+                .hasArg(false)
                 .build();
 
         options.addOption(o);

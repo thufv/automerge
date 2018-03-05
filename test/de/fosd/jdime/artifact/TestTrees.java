@@ -226,7 +226,7 @@ public final class TestTrees {
         TestArtifact s4Right = new TestArtifact("Statement4", KeyEnums.Type.NODE);
 
         clazz.addChild(method);
-        method.addChild(clazz.createConflictArtifact(lBody, rBody));
+        method.addChild(clazz.createConflictArtifact(lBody, rBody, null));
 
         lBody.addChild(sTryLeft);
         sTryLeft.addChild(s1Left); sTryLeft.addChild(s2Left);

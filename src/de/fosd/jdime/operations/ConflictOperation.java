@@ -42,6 +42,7 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
     
     private T left;
     private T right;
+    private T base;
 
     /**
      * The target {@link Artifact} to add a conflict or choice node to.
@@ -66,11 +67,12 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
      * @param rightCondition
      *         the condition for the right alternative, may be {@code null}
      */
-    public ConflictOperation(T left, T right, T target, String leftCondition, String rightCondition) {
+    public ConflictOperation(T left, T right, T target, String leftCondition, String rightCondition, T base) {
         Objects.requireNonNull(target, "The parent for the conflict must not be null.");
 
         this.left = left;
         this.right = right;
+        this.base = base;
         this.target = target;
 
         if (leftCondition != null) {
@@ -100,7 +102,7 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
             target.addChild(choice);
         } else {
             LOG.fine("Creating a conflict node.");
-            target.addChild(target.createConflictArtifact(left, right));
+            target.addChild(target.createConflictArtifact(left, right, base));
         }
     }
 

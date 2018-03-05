@@ -65,9 +65,9 @@ public class TestArtifact extends Artifact<TestArtifact> {
     }
 
     @Override
-    public TestArtifact createConflictArtifact(TestArtifact left, TestArtifact right) {
+    public TestArtifact createConflictArtifact(TestArtifact left, TestArtifact right, TestArtifact base) {
         TestArtifact conflict = new TestArtifact(MergeScenario.CONFLICT, "Conflict", KeyEnums.Type.NODE);
-        conflict.setConflict(left, right);
+        conflict.setConflict(left, right, base);
 
         return conflict;
     }

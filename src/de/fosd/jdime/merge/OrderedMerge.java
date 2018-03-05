@@ -273,8 +273,8 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
                 rightT.setChildren(rightRest);
 
                 ConflictOperation<T> conflictOp = !reversed ?
-                        new ConflictOperation<>(leftT, rightT, target, l.getName(), r.getName()) :
-                        new ConflictOperation<>(rightT, leftT, target, r.getName(), l.getName());
+                        new ConflictOperation<>(leftT, rightT, target, l.getName(), r.getName(), pivot) :
+                        new ConflictOperation<>(rightT, leftT, target, r.getName(), l.getName(), pivot);
                 conflictOp.apply(context);
 
                 return baseRest;
@@ -284,8 +284,8 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
             T rightT = matchedLeft.createEmptyArtifact(r);
 
             ConflictOperation<T> conflictOp = !reversed ?
-                    new ConflictOperation<>(matchedLeft, rightT, target, l.getName(), r.getName()) :
-                    new ConflictOperation<>(rightT, matchedLeft, target, r.getName(), l.getName());
+                    new ConflictOperation<>(matchedLeft, rightT, target, l.getName(), r.getName(), pivot) :
+                    new ConflictOperation<>(rightT, matchedLeft, target, r.getName(), l.getName(), pivot);
             conflictOp.apply(context);
 
             return merge3(baseRest, left2, rightRest, l, r, target, context, reversed);

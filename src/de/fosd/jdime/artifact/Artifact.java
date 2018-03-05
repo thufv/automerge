@@ -226,9 +226,10 @@ public abstract class Artifact<T extends Artifact<T>> implements Comparable<T>, 
      *
      * @param left  left alternative <code>Artifact</code>
      * @param right right alternative <code>Artifact</code>
+     * @param base  base <code>Artifact</code>
      * @return conflict <code>Artifact</code>
      */
-    public abstract T createConflictArtifact(T left, T right);
+    public abstract T createConflictArtifact(T left, T right, T base);
 
     /**
      * Returns a choice artifact.
@@ -803,10 +804,11 @@ public abstract class Artifact<T extends Artifact<T>> implements Comparable<T>, 
      * @param left  left alternative
      * @param right right alternative
      */
-    protected void setConflict(T left, T right) {
+    protected void setConflict(T left, T right, T base) {
         this.conflict = true;
         this.left = left;
         this.right = right;
+        this.base = base;
     }
 
     /**

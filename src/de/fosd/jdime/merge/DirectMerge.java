@@ -161,7 +161,7 @@ public class DirectMerge<T extends Artifact<T>> implements MergeInterface<T> {
                 } else {
                     // either insertion-deletion-conflict or deletion-insertion-conflict
                     ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                            leftChild, rightChild, target, l.getName(), r.getName());
+                            leftChild, rightChild, target, l.getName(), r.getName(), baseChild);
                     conflictOp.apply(context);
                 }
             }

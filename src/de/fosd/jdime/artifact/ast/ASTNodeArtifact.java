@@ -457,7 +457,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             targetParent.removeChild(target);
 
             Operation<ASTNodeArtifact> conflictOp = new ConflictOperation<>(left, right, targetParent,
-                    left.getRevision().getName(), right.getRevision().getName());
+                    left.getRevision().getName(), right.getRevision().getName(), base);
             conflictOp.apply(context);
         }
     }
@@ -486,6 +486,12 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         if (isConflict()) {
             astnode.isConflict = true;
             astnode.jdimeId = getId();
+
+            if (base != null) {
+                base.rebuildAST();
+            } else {
+                base = new ASTNodeArtifact(MergeScenario.BASE);
+            }
 
             if (left != null) {
                 left.rebuildAST();
@@ -558,7 +564,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     }
 
     @Override
-    public ASTNodeArtifact createConflictArtifact(ASTNodeArtifact left, ASTNodeArtifact right) {
+    public ASTNodeArtifact createConflictArtifact(ASTNodeArtifact left, ASTNodeArtifact right, ASTNodeArtifact base) {
 
         /*
          * The generated ASTNodeArtifact is virtual meaning it does not represent a part of the
@@ -581,7 +587,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         }
 
         ASTNodeArtifact conflict = new ASTNodeArtifact(MergeScenario.CONFLICT, typeNode);
-        conflict.setConflict(left, right);
+        conflict.setConflict(left, right, base);
 
         return conflict;
     }
@@ -656,6 +662,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         System.out.println(left.prettyPrint());
         System.out.println("--- right---");
         System.out.println(right.prettyPrint());
+        System.out.println("--- base ---");
+        System.out.println(base.prettyPrint());
     }
 
     /**

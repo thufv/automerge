@@ -662,6 +662,8 @@ public class FileArtifact extends Artifact<FileArtifact> {
                                     operation.getTarget().getFile().getAbsolutePath());
 
                             if (Main.config.getBoolean(CLI_SYNTHESIS).isPresent()) { // synthesis
+                                LOG.info("Synthesis");
+
                                 try {
                                     operation.targetCache.solveConflicts(nodes, context, scenario);
                                 } catch (Throwable e) {
@@ -761,7 +763,7 @@ public class FileArtifact extends Artifact<FileArtifact> {
     }
 
     @Override
-    public FileArtifact createConflictArtifact(FileArtifact left, FileArtifact right) {
+    public FileArtifact createConflictArtifact(FileArtifact left, FileArtifact right, FileArtifact base) {
         // This is not a conflict introduced by concurrent modification of content,
         // but by deleting and changing a file (insertion-deletion conflict on file/directory level)
 
@@ -797,9 +799,9 @@ public class FileArtifact extends Artifact<FileArtifact> {
 
             for (FileArtifact child : deleted.getChildren()) {
                 if (deleted == left) {
-                    conflict.addChild(createConflictArtifact(child, null));
+                    conflict.addChild(createConflictArtifact(child, null, base));
                 } else if (deleted == right) {
-                    conflict.addChild(createConflictArtifact(null, child));
+                    conflict.addChild(createConflictArtifact(null, child, base));
                 } else {
                     throw new RuntimeException("Both sides of conflict are null");
                 }

@@ -178,7 +178,8 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
                 // delete-change conflict
                 LOG.fine("Merge: (left) deletion is conflict with (right) updating");
                 for (T rightChild : right.getChildren()) {
-                    ConflictOperation<T> conflictOp = new ConflictOperation<>(null, rightChild, target, l.getName(), r.getName());
+                    ConflictOperation<T> conflictOp = new ConflictOperation<>(null, rightChild, target,
+                            l.getName(), r.getName(), base);
                     conflictOp.apply(context);
                 }
             } else if (!right.hasChildren()) { // right has no children
@@ -208,7 +209,8 @@ public class Merge<T extends Artifact<T>> implements MergeInterface<T> {
                 // delete-change conflict
                 LOG.fine("Merge: (right) deletion is conflict with (left) updating");
                 for (T leftChild : left.getChildren()) {
-                    ConflictOperation<T> conflictOp = new ConflictOperation<>(leftChild, null, target, l.getName(), r.getName());
+                    ConflictOperation<T> conflictOp = new ConflictOperation<>(leftChild, null, target,
+                            l.getName(), r.getName(), base);
                     conflictOp.apply(context);
                 }
             } else {

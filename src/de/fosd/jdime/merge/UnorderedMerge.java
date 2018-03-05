@@ -120,7 +120,7 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                         }
 
                         ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                leftChild, null, target, l.getName(), r.getName());
+                                leftChild, null, target, l.getName(), r.getName(), base);
                         conflictOp.apply(context);
                     } else {
                         // can be safely deleted
@@ -162,7 +162,7 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
 
                         // insertion-deletion-conflict
                         ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                null, rightChild, target, l.getName(), r.getName());
+                                null, rightChild, target, l.getName(), r.getName(), base);
                         conflictOp.apply(context);
                     } else {
                         // can be safely deleted
