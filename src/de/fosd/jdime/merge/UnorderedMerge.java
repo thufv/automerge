@@ -1,25 +1,25 @@
 /**
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
- *
+ * <p>
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
  */
 package de.fosd.jdime.merge;
 
@@ -107,20 +107,19 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                 assert (leftChild != null);
                 final T finalLeftChild = leftChild;
 
-                LOG.finest(() -> String.format("%s is not in right", prefix(finalLeftChild)));
+                LOG.finest(() -> String.format("Unordered: %s is not in right", prefix(finalLeftChild)));
 
                 if (b != null && b.contains(leftChild)) {
-                    LOG.finest(() -> String.format("%s was deleted by right", prefix(finalLeftChild)));
+                    LOG.fine(() -> String.format("Unordered: %s was deleted by right", prefix(finalLeftChild)));
 
                     // was deleted in right
                     if (leftChild.hasChanges(b)) {
                         // insertion-deletion-conflict
-                        if (LOG.isLoggable(Level.FINEST)) {
-                            LOG.finest(prefix(leftChild) + "has changes in subtree.");
-                        }
+                        LOG.fine("Unordered: " + prefix(leftChild) + " has changes.");
 
+                        T baseChild = leftChild.getMatching(b).getMatchingRevision(b);
                         ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                leftChild, null, target, l.getName(), r.getName(), base);
+                                leftChild, null, target, l.getName(), r.getName(), baseChild);
                         conflictOp.apply(context);
                     } else {
                         // can be safely deleted
@@ -128,11 +127,11 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                         delOp.apply(context);
                     }
                 } else {
-                    LOG.finest(() -> String.format("%s is a change", prefix(finalLeftChild)));
+                    LOG.fine(() -> String.format("Unordered: %s is a change", prefix(finalLeftChild)));
                     // leftChild is a change
 
                     // FIXME: check if this can also be a conflict
-                    LOG.finest(() -> String.format("%s adding change", prefix(finalLeftChild)));
+                    LOG.fine(() -> String.format("Unordered: %s adding change", prefix(finalLeftChild)));
 
                     // add the left change
                     AddOperation<T> addOp = new AddOperation<>(copyTree(leftChild), target, l.getName());
@@ -151,18 +150,19 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                 assert (rightChild != null);
                 final T finalRightChild = rightChild;
 
-                LOG.finest(() -> String.format("%s is not in left", prefix(finalRightChild)));
+                LOG.finest(() -> String.format("Unordered: %s is not in left", prefix(finalRightChild)));
 
                 if (b != null && b.contains(rightChild)) {
-                    LOG.finest(() -> String.format("%s was deleted by left", prefix(finalRightChild)));
+                    LOG.fine(() -> String.format("Unordered: %s was deleted by left", prefix(finalRightChild)));
 
                     // was deleted in left
                     if (rightChild.hasChanges(b)) {
-                        LOG.finest(() -> String.format("%s has changes in subtree.", prefix(finalRightChild)));
+                        LOG.fine(() -> String.format("Unordered: %s has changes.", prefix(finalRightChild)));
 
                         // insertion-deletion-conflict
+                        T baseChild = rightChild.getMatching(b).getMatchingRevision(b);
                         ConflictOperation<T> conflictOp = new ConflictOperation<>(
-                                null, rightChild, target, l.getName(), r.getName(), base);
+                                null, rightChild, target, l.getName(), r.getName(), baseChild);
                         conflictOp.apply(context);
                     } else {
                         // can be safely deleted
@@ -170,11 +170,11 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                         delOp.apply(context);
                     }
                 } else {
-                    LOG.finest(() -> String.format("%s is a change", prefix(finalRightChild)));
+                    LOG.fine(() -> String.format("Unordered: %s is a change", prefix(finalRightChild)));
                     // rightChild is a change
 
                     // FIXME: check if this can also be a conflict
-                    LOG.finest(() -> String.format("%s adding change", prefix(finalRightChild)));
+                    LOG.fine(() -> String.format("Unordered: %s adding change", prefix(finalRightChild)));
 
                     // add the right change
                     AddOperation<T> addOp = new AddOperation<>(copyTree(rightChild), target, r.getName());
@@ -194,7 +194,7 @@ public class UnorderedMerge<T extends Artifact<T>> implements MergeInterface<T> 
                 final T finalRightChild = rightChild;
 
                 // left and right have the artifact. merge it.
-                LOG.finest(() -> String.format("%s is in both revisions, [%s] too", prefix(finalLeftChild), finalRightChild.getId()));
+                LOG.fine(() -> String.format("%s is in both revisions, [%s] too", prefix(finalLeftChild), finalRightChild.getId()));
 
                 // leftChild is a choice node
                 if (leftChild.isChoice()) {
