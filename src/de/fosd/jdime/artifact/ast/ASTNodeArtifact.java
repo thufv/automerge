@@ -212,6 +212,19 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         return new ASTNodeArtifact(revision);
     }
 
+    private static final String EMPTY_ARTIFACT_DUMP_STRING =
+            new ASTNodeArtifact(new Revision("")).dumpString();
+
+    /**
+     * Check if this ASTNodeArtifact is an empty artifact, say, created by calling `createEmptyArtifact`.
+     *
+     * @author paul
+     * @return this is an empty artifact
+     */
+    public boolean isEmptyArtifact() {
+        return dumpString().equals(EMPTY_ARTIFACT_DUMP_STRING);
+    }
+
     @Override
     public String prettyPrint() {
         assert (astnode != null);
@@ -724,17 +737,55 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
                 long startTime = System.currentTimeMillis();
 
-                while (depth < 5) {
-                    SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
-                    Pair<Boolean, Integer> ret = ctx.check(exp, maxK);
-                    found = ret.getKey();
-                    k = ret.getValue();
-                    totalSteps += k;
-                    if (found) {
+                if (node.left.isEmptyArtifact()) { // special case: left is empty
+                    LOG.info("Synthesis: Left artifact is empty");
+
+                    k = 1;
+                    totalSteps = 1;
+                    LOG.fine("Synthesis: Check 1: <empty>");
+
+                    if (exp.eq(node.left)) {
                         found = true;
-                        break;
                     } else {
-                        depth++;
+                        k = 2;
+                        totalSteps = 2;
+                        LOG.fine("Synthesis: Check 2:\n" + node.right.prettyPrint());
+
+                        if (exp.eq(node.right)) {
+                            found = true;
+                        }
+                    }
+                } else if (node.right.isEmptyArtifact()) { // special case: right is empty
+                    LOG.info("Synthesis: Right artifact is empty");
+
+                    k = 1;
+                    totalSteps = 1;
+                    LOG.fine("Synthesis: Check 1: <empty>");
+
+                    if (exp.eq(node.right)) {
+                        found = true;
+                    } else {
+                        k = 2;
+                        totalSteps = 2;
+                        LOG.fine("Synthesis: Check 2:\n" + node.left.prettyPrint());
+
+                        if (exp.eq(node.left)) {
+                            found = true;
+                        }
+                    }
+                } else { // normal case
+                    while (depth < 5) {
+                        SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
+                        Pair<Boolean, Integer> ret = ctx.check(exp, maxK);
+                        found = ret.getKey();
+                        k = ret.getValue();
+                        totalSteps += k;
+                        if (found) {
+                            found = true;
+                            break;
+                        } else {
+                            depth++;
+                        }
                     }
                 }
 
@@ -825,7 +876,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     }
 
     public boolean eq(ASTNodeArtifact that) {
-        return astnode.prettyPrint().equals(that.astnode.prettyPrint());
+        return astnode.dumpTree().equals(that.astnode.dumpTree()) ||
+                astnode.prettyPrint().equals(that.astnode.prettyPrint());
     }
 
     public String dumpString() {

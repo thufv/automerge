@@ -10,7 +10,7 @@ import scala.collection.{JavaConverters, mutable}
 import scala.util.{Left => Found, Right => NotFound}
 
 class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
-                       val base: ASTNodeArtifact, val LOG: Logger, val maxDepth: Int = 2) {
+                       val base: ASTNodeArtifact, val LOG: Logger, val maxDepth: Int) {
   left.setRoot()
   right.setRoot()
 
@@ -161,7 +161,7 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   private val on: Boolean = true
 
   def visitTree(tree: ASTNodeArtifact, parent: NonTerm, label: Label,
-                depth: Int = 0, listMode: Boolean = false): Unit = {
+                depth: Int = 1, listMode: Boolean = false): Unit = {
     if (tree.isLeafNode || depth >= maxDepth) {
       val node = Concrete(tree)
       if (label != Base) {
@@ -239,8 +239,8 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
         lt(label1, label2)
     }
 
-    LOG.finer("Grammar:")
-    if (LOG.isLoggable(Level.FINER)) println(grammar.prettyPrint)
+    LOG.fine("Grammar:")
+    if (LOG.isLoggable(Level.FINE)) println(grammar.prettyPrint)
     LOG.finer("Labels:")
     if (LOG.isLoggable(Level.FINER)) println(labels.prettyPrint)
 
