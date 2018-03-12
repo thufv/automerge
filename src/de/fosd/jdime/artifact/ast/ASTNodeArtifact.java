@@ -825,7 +825,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     }
 
     public boolean eq(ASTNodeArtifact that) {
-        return astnode.dumpTree().equals(that.astnode.dumpTree());
+        return astnode.prettyPrint().equals(that.astnode.prettyPrint());
     }
 
     public String dumpString() {
