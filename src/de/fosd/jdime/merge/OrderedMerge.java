@@ -76,8 +76,9 @@ public class OrderedMerge<T extends Artifact<T>> implements MergeInterface<T> {
         ArtifactList<T> up = new ArtifactList<>();
         ArtifactList<T> down = new ArtifactList<>();
 
-        Matching<T> m =  pivot.getMatching(r);
-        T match = (m == null) ? null : m.getRight();
+        Matching<T> m = pivot.getMatching(r);
+        T match = (m == null) ? null : m.getMatchingRevision(r);
+        if (m != null) assert match != null;
 
         Iterator<T> iter = list.iterator();
         boolean after = false;

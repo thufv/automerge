@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import de.fosd.jdime.artifact.Artifact;
+import de.fosd.jdime.config.merge.Revision;
 import de.fosd.jdime.util.UnorderedTuple;
 
 /**
@@ -133,6 +134,27 @@ public class Matching<T extends Artifact<T>> implements Cloneable, Comparable<Ma
         T right = getRight();
 
         return left == artifact ? right : right == artifact ? left : null;
+    }
+
+    /**
+     * If one of the <code>Artifact</code>s contained in this <code>Matching</code> has the identical revision
+     * as `revision`, then return it.
+     * Otherwise, return `null`.
+     *
+     * @param revision expected revision.
+     * @return the corresponding artifact has the identical revision.
+     */
+    public T getMatchingRevision(Revision revision) {
+        T left = getLeft();
+        T right = getRight();
+
+        if (left.getRevision().equals(revision)) {
+            return left;
+        }
+        if (right.getRevision().equals(revision)) {
+            return right;
+        }
+        return null;
     }
 
     /**
