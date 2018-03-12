@@ -857,6 +857,13 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             return parentName + "." + astnode.getClass().getName();
         }
 
+        // Special case: the method name of `MethodAccess` is excluded in children, instead,
+        // we get it by calling `this.getId()`.
+        if (astnode instanceof MethodAccess) {
+            MethodAccess m = (MethodAccess)astnode;
+            return m.getClass().getName() + "." + m.getID();
+        }
+
         return astnode.getClass().getName();
     }
 
