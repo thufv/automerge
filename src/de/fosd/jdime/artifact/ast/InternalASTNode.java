@@ -4,8 +4,11 @@ import de.fosd.jdime.config.merge.Revision;
 
 import java.io.*;
 
-public class HoleAST extends ASTNodeArtifact {
-    public HoleAST(File file) {
+/**
+ * Warning: This class is for experiment ONLY.
+ */
+public class InternalASTNode extends ASTNodeArtifact {
+    public InternalASTNode(File file) {
         super(new Revision("internal"));
         FileReader reader = null;
         try {

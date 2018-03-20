@@ -46,6 +46,7 @@ import javafx.util.Pair;
 import org.extendj.ast.*;
 import synthesis.SynthesisContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -712,29 +713,41 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             Matcher<ASTNodeArtifact> matcher = new Matcher<>(this, expAST);
             Matchings<ASTNodeArtifact> matchings = matcher.match(context, Color.GREEN);
 
+            int num = 0;
             for (ASTNodeArtifact node : nodes) {
-                Optional<ASTNodeArtifact> expRootOpt = matchings.queryRightByLeftId(node.getParent().getId());
-                if (!expRootOpt.isPresent()) {
-                    LOG.severe("Synthesis: Expected answer is missing in: " +
-                            expected.getFile().getAbsolutePath());
-                    System.out.println(node.getParent().dump(PLAINTEXT_TREE));
-                    return;
+                num++;
+
+                File holeFile = new File(expected.getFile().getAbsolutePath() + ".hole" + num);
+                ASTNodeArtifact exp = null;
+                if (holeFile.exists()) { // check using hole file
+                    exp = new InternalASTNode(holeFile);
+                    LOG.info("Synthesis: Check using hole file: " + holeFile);
+                } else {
+                    Optional<ASTNodeArtifact> expRootOpt = matchings.queryRightByLeftId(node.getParent().getId());
+                    if (!expRootOpt.isPresent()) {
+                        LOG.severe("Synthesis: Expected answer is missing in: " +
+                                expected.getFile().getAbsolutePath());
+                        System.out.println(node.getParent().dump(PLAINTEXT_TREE));
+                        return;
+                    }
+
+                    ASTNodeArtifact expRoot = expRootOpt.get();
+                    int index = node.getParent().indexOf(node);
+                    if (index >= expRoot.getNumChildren()) {
+                        LOG.severe("Synthesis: Expected child (#" + index + ") is missing in: " +
+                                expected.getFile().getAbsolutePath());
+                        System.out.println(expRoot.dump(PLAINTEXT_TREE));
+                        System.out.println();
+                        System.out.println(node.getParent().dump(PLAINTEXT_TREE));
+                        return;
+                    }
+
+                    exp = node.isList() ?
+                            expRoot.wrapListArtifact(index, node) :
+                            expRoot.getChild(index);
                 }
 
-                ASTNodeArtifact expRoot = expRootOpt.get();
-                int index = node.getParent().indexOf(node);
-                if (index >= expRoot.getNumChildren()) {
-                    LOG.severe("Synthesis: Expected child (#" + index + ") is missing in: " +
-                            expected.getFile().getAbsolutePath());
-                    System.out.println(expRoot.dump(PLAINTEXT_TREE));
-                    System.out.println();
-                    System.out.println(node.getParent().dump(PLAINTEXT_TREE));
-                    return;
-                }
-
-                ASTNodeArtifact exp = node.isList() ?
-                        expRoot.wrapListArtifact(index, node) :
-                        expRoot.getChild(index);
+                assert exp != null;
 
                 LOG.info("Synthesis: Expected");
                 if (LOG.isLoggable(Level.INFO)) {
