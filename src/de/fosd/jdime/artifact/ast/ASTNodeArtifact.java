@@ -54,6 +54,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static de.fosd.jdime.config.CommandLineConfigSource.CLI_MAPPER_1;
 import static de.fosd.jdime.config.CommandLineConfigSource.CLI_TOP_K;
 import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
 import static de.fosd.jdime.util.SuccessLevel.SUCCESS;
@@ -218,8 +219,8 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Check if this ASTNodeArtifact is an empty artifact, say, created by calling `createEmptyArtifact`.
      *
-     * @author paul
      * @return this is an empty artifact
+     * @author paul
      */
     public boolean isEmptyArtifact() {
         return dumpString().equals(EMPTY_ARTIFACT_DUMP_STRING);
@@ -578,6 +579,16 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         return getASTNode() instanceof org.extendj.ast.List;
     }
 
+    /**
+     * Check if this ASTNode is of type `Block`.
+     *
+     * @return whether it is of type `Block`
+     * @author paul
+     */
+    public boolean isBlock() {
+        return getASTNode() instanceof org.extendj.ast.Block;
+    }
+
     @Override
     public ASTNodeArtifact createConflictArtifact(ASTNodeArtifact left, ASTNodeArtifact right, ASTNodeArtifact base) {
 
@@ -846,6 +857,10 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         return isLeaf();
     }
 
+    private String shortName() {
+        return astnode.getClass().getName().substring(16);
+    }
+
     /**
      * Get kind name.
      *
@@ -853,18 +868,20 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * @author paul
      */
     public String kind(String parentName) {
-        if (astnode instanceof Block || astnode instanceof org.extendj.ast.List) {
-            return parentName + "." + astnode.getClass().getName();
-        }
-
         // Special case: the method name of `MethodAccess` is excluded in children, instead,
         // we get it by calling `this.getId()`.
         if (astnode instanceof MethodAccess) {
-            MethodAccess m = (MethodAccess)astnode;
-            return m.getClass().getName() + "." + m.getID();
+            MethodAccess m = (MethodAccess) astnode;
+            return shortName() + "." + m.getID();
         }
 
-        return astnode.getClass().getName();
+        if (Main.config.getBoolean(CLI_MAPPER_1).orElse(true)) {
+            if (astnode instanceof Block || astnode instanceof org.extendj.ast.List) {
+                return parentName + "." + shortName();
+            }
+        }
+
+        return shortName();
     }
 
     public String[] abstractArgumentNames(String parentName) {
@@ -889,5 +906,9 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
 
     public String dumpString() {
         return astnode.getClass().getName();
+    }
+
+    public String dumpTree() {
+        return astnode.dumpTree();
     }
 }

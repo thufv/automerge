@@ -4,7 +4,9 @@ import java.util.logging.{Level, Logger}
 
 import de.fosd.jdime.artifact.ArtifactList
 import de.fosd.jdime.artifact.ast.ASTNodeArtifact
+import de.fosd.jdime.Main
 import de.fosd.jdime.config.merge.Revision
+import de.fosd.jdime.config.CommandLineConfigSource._
 
 import scala.collection.{JavaConverters, mutable}
 import scala.util.{Left => Found, Right => NotFound}
@@ -86,7 +88,7 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       Stream(tree)
     }
 
-    override def uniqueID: String = s"${tree.getId}:${tree.dumpString}"
+    override def uniqueID: String = s"${tree.dumpTree}"
   }
 
   case class Abstract(constructor: ArtifactList[ASTNodeArtifact] => ASTNodeArtifact,
@@ -160,7 +162,17 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   private val labels: Counter[Symbol, Label] = new Counter[Symbol, Label]
   private val on: Boolean = true
 
-  def visitTree(tree: ASTNodeArtifact, parent: NonTerm, label: Label,
+  def depthOf(tree: ASTNodeArtifact, depth: Int = 1): Int = {
+    if (tree.isLeafNode) depth
+    else {
+      val d = if (tree.isList || tree.isBlock) 0 else 1
+      JavaConverters.asScalaIterator(tree.getChildren.iterator).map {
+        t => depthOf(t, depth + d)
+      }.max
+    }
+  }
+
+  def visitTree(tree: ASTNodeArtifact, parent: NonTerm, label: Label, maxDepth: Int,
                 depth: Int = 1, listMode: Boolean = false): Unit = {
     if (tree.isLeafNode || depth >= maxDepth) {
       val node = Concrete(tree)
@@ -184,11 +196,12 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       labels.insert(node, label)
 
       if (tree.isList) tree.getChildren.forEach {
-        t => visitTree(t, children(0), label, depth, on)
+        t => visitTree(t, children(0), label, maxDepth, depth, on)
       } else {
+        val d = if (tree.isBlock) 0 else 1
         JavaConverters.asScalaIterator(tree.getChildren.iterator).zip(children.iterator).foreach {
           case (t, p) =>
-            visitTree(t, p, label, depth + 1)
+            visitTree(t, p, label, maxDepth, depth + d)
         }
       }
     }
@@ -221,9 +234,20 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   lazy val programs: Stream[ASTNodeArtifact] = {
     val start = NonTerm("start")
 
-    visitTree(base, start, Base)
-    visitTree(left, start, Left)
-    visitTree(right, start, Right)
+    val baseDepth = depthOf(base)
+    val leftDepth = depthOf(left)
+    val rightDepth = depthOf(right)
+    val D = Math.max(leftDepth, rightDepth)
+
+    def f(x: Int, label: Label): Int = {
+      val d = maxDepth - Math.max(0, D - x)
+      LOG.fine(s"Visit $label with max depth = $d")
+      d
+    }
+
+    visitTree(base, start, Base, f(baseDepth, Base))
+    visitTree(left, start, Left, f(leftDepth, Left))
+    visitTree(right, start, Right, f(rightDepth, Right))
 
     def lt(s1: Set[Label], s2: Set[Label]): Boolean = {
       val swap = (s2 == Set(Left) && s1.contains(Base) && s1.contains(Right)) ||
@@ -232,11 +256,14 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       !swap
     }
 
-    grammar.sortWith {
-      case (l, r) =>
-        val label1 = labels(l)
-        val label2 = labels(r)
-        lt(label1, label2)
+    if (Main.config.getBoolean(CLI_NO_RANKING).orElse(false)) LOG.config("Ranking is disabled.")
+    else {
+      grammar.sortWith {
+        case (l, r) =>
+          val label1 = labels(l)
+          val label2 = labels(r)
+          lt(label1, label2)
+      }
     }
 
     LOG.fine("Grammar:")

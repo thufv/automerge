@@ -31,11 +31,7 @@ import de.fosd.jdime.matcher.cost_model.CMMode;
 import de.fosd.jdime.strategy.MergeStrategy;
 import de.fosd.jdime.strdump.DumpMode;
 import de.uni_passau.fim.seibt.kvconfig.sources.ConfigSource;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 
 /**
  * A <code>ConfigSource</code> backed by a <code>CommandLine</code> instance. Its {@link #getMapping(String)} method
@@ -78,6 +74,7 @@ public class CommandLineConfigSource extends ConfigSource {
 
     /**
      * Expected artifact.
+     * -e, --expected
      *
      * @author paul
      */
@@ -85,6 +82,7 @@ public class CommandLineConfigSource extends ConfigSource {
 
     /**
      * Temporary folder.
+     * -t, --tmp
      *
      * @author paul
      */
@@ -92,6 +90,7 @@ public class CommandLineConfigSource extends ConfigSource {
 
     /**
      * Apply synthesis when conflicts occur.
+     * -s, --synthesis
      *
      * @author paul
      */
@@ -105,6 +104,38 @@ public class CommandLineConfigSource extends ConfigSource {
      */
     public static final String CLI_TOP_K = "K";
 
+    /**
+     * Disable ranking.
+     * -noR, --no-ranking
+     *
+     * @author paul
+     */
+    public static final String CLI_NO_RANKING = "noR";
+
+    /**
+     * Mapper 1.
+     * -M1, --mapper-1
+     *
+     * @author paul
+     */
+    public static final String CLI_MAPPER_1 = "M1";
+
+    /**
+     * Mapper 2.
+     * -M2, --mapper-2
+     *
+     * @author paul
+     */
+    public static final String CLI_MAPPER_2 = "M2";
+
+    /**
+     * Mapper 3.
+     * -M3, --mapper-3
+     *
+     * @author paul
+     */
+    public static final String CLI_MAPPER_3 = "M3";
+
     public static final String ARG_LIST = "ARG_LIST";
     public static final String ARG_LIST_SEP = ",";
 
@@ -114,10 +145,8 @@ public class CommandLineConfigSource extends ConfigSource {
     /**
      * Constructs a new <code>CommandLineConfigSource</code> from the given <code>args</code>.
      *
-     * @param args
-     *         the command line arguments to parse
-     * @throws ParseException
-     *         if there is an exception parsing the arguments
+     * @param args the command line arguments to parse
+     * @throws ParseException if there is an exception parsing the arguments
      */
     public CommandLineConfigSource(String[] args) throws ParseException {
         this(args, DEFAULT_PRIORITY);
@@ -126,12 +155,9 @@ public class CommandLineConfigSource extends ConfigSource {
     /**
      * Constructs a new <code>CommandLineConfigSource</code> from the given <code>args</code>.
      *
-     * @param args
-     *         the command line arguments to parse
-     * @param priority
-     *         the priority for this <code>ConfigSource</code>
-     * @throws ParseException
-     *         if there is an exception parsing the arguments
+     * @param args     the command line arguments to parse
+     * @param priority the priority for this <code>ConfigSource</code>
+     * @throws ParseException if there is an exception parsing the arguments
      */
     public CommandLineConfigSource(String[] args, int priority) throws ParseException {
         super(priority, null, null);
@@ -387,7 +413,7 @@ public class CommandLineConfigSource extends ConfigSource {
         options.addOption(o);
 
         o = Option.builder(CLI_TMP_FOLDER)
-                .longOpt("tmp-folder")
+                .longOpt("tmp")
                 .desc("Temporary folder to write some generated sources, default /tmp.")
                 .hasArg(true)
                 .build();
@@ -402,14 +428,50 @@ public class CommandLineConfigSource extends ConfigSource {
 
         options.addOption(o);
 
+        // Option group for synthesis parameters.
+        OptionGroup synthesisOptions = new OptionGroup();
+
         o = Option.builder(CLI_TOP_K)
                 .longOpt("top-k")
                 .desc("Check top k ranked programs in systhesis phase, default 32.")
                 .hasArg(true)
                 .build();
 
-        options.addOption(o);
+        synthesisOptions.addOption(o);
 
+        o = Option.builder(CLI_NO_RANKING)
+                .longOpt("no-ranking")
+                .desc("Disable ranking.")
+                .hasArg(false)
+                .build();
+
+        synthesisOptions.addOption(o);
+
+        o = Option.builder(CLI_MAPPER_1)
+                .longOpt("mapper-1")
+                .desc("Enable mapper 1.")
+                .hasArg(true)
+                .build();
+
+        synthesisOptions.addOption(o);
+
+        o = Option.builder(CLI_MAPPER_2)
+                .longOpt("mapper-2")
+                .desc("Enable mapper 2.")
+                .hasArg(true)
+                .build();
+
+        synthesisOptions.addOption(o);
+
+        o = Option.builder(CLI_MAPPER_3)
+                .longOpt("mapper-3")
+                .desc("Enable mapper 3.")
+                .hasArg(true)
+                .build();
+
+        synthesisOptions.addOption(o);
+
+        options.addOptionGroup(synthesisOptions);
         return options;
     }
 
