@@ -24,6 +24,7 @@
 package de.fosd.jdime.config.merge;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -699,6 +700,13 @@ public class MergeContext implements Cloneable {
                     }
                 }
 
+                if (!outFile.exists()) { // If output file does not exist, then create an empty one.
+                    try {
+                        assert outFile.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
                 setOutputFile(new FileArtifact(MergeScenario.MERGE, outFile, false));
             } else if (!(getDumpMode() != DumpMode.NONE || isInspect())) {
                 throw new AbortException("Not output file or directory given.");
