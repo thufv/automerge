@@ -240,7 +240,7 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
     val D = Math.max(leftDepth, rightDepth)
 
     def f(x: Int, label: Label): Int = {
-      val d = maxDepth - Math.max(0, D - x)
+      val d = Math.max(maxDepth - (D - x), 2)
       LOG.fine(s"Visit $label with max depth = $d")
       d
     }
@@ -289,7 +289,7 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       else {
         val p = ps.head
         LOG.fine(s"Synthesis: Check $k:\n${p.prettyPrint}")
-        if (p.eq(exp)) Found(k)
+        if (exp.eq(p)) Found(k)
         else loop(ps.tail, k + 1)
       }
     }
