@@ -5,9 +5,9 @@ description: >
   Conflict resolution for structured merge.
 
 baseurl: "/AutoMerge.Site" # the subpath of your site, e.g. /blog/
-url: https://paulzfm.github.io/AutoMerge.Site # the base hostname & protocol for your site
-git_address: https://github.com/paulzfm/AutoMerge.Site
-git_edit_address: https://github.com/paulzfm/AutoMerge.Site/blob/gh-pages
+url: https://thufv.github.io/automerge # the base hostname & protocol for your site
+git_address: https://github.com/thufv/automerge
+git_edit_address: https://github.com/thufv/automerge/blob/gh-pages
 
 # theme options from https://bootswatch.com/
 # comment out this to use default Bootstrap
