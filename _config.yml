@@ -4,7 +4,7 @@ email: your-email@domain.com
 description: >
   Conflict resolution for structured merge.
 
-baseurl: "/AutoMerge.Site" # the subpath of your site, e.g. /blog/
+baseurl: "/automerge" # the subpath of your site, e.g. /blog/
 url: https://thufv.github.io/automerge # the base hostname & protocol for your site
 git_address: https://github.com/thufv/automerge
 git_edit_address: https://github.com/thufv/automerge/blob/gh-pages
