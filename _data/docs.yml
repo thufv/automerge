@@ -1,8 +1,14 @@
-- title: Getting Started
+- title: AutoMerge
   docs:
   - home
+  - install
+  - usage
+  - options
 
 - title: Reproducing
   docs:
-  - usage
+  - artifact
   - steps
+  - discussion
+  - ms-extract
+  - faq
