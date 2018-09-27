@@ -1,0 +1,8 @@
+@Test public void descriptionAndRunNotificationsAreConsistent() {
+  Result result = JUnitCore.runClasses(CompatibilityTest.class);
+  assertEquals(0, result.getIgnoreCount());
+  Runner runner = Request.aClass(CompatibilityTest.class).getRunner();
+  Description description = runner.getDescription();
+  assertEquals(1, description.getChildren().size());
+  assertEquals("initializationError", description.getChildren().get(0).getMethodName());
+} 

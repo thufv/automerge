@@ -1,0 +1,4 @@
+if (fcc.isLoggedIn()) {
+  logger.warning("startSinglePlayer while logged in!");
+  requestLogout(LogoutReason.LOGIN);
+}

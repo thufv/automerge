@@ -1,0 +1,1 @@
+systemProperties.stream().map((entry) -> "-D" + entry).forEach(args::add)
