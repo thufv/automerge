@@ -5,7 +5,10 @@ permalink: /docs/artifact/
 
 ### Download
 
-[Download Here](https://drive.google.com/file/d/16ovkfdX6bg993AT5_WybhpHKFy8UKJDA/view)
+Download [latest version](https://github.com/thufv/automerge/archive/artifact.zip),
+or clone the [repository](https://github.com/thufv/automerge/tree/artifact).
+
+Download [OOPSLA'18 AEC version](https://drive.google.com/file/d/16ovkfdX6bg993AT5_WybhpHKFy8UKJDA/view){:target="_blank"}.
 
 ### Folder Structure
 
