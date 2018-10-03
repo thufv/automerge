@@ -20,11 +20,9 @@
  * Contributors:
  *     Olaf Lessenich <lessenic@fim.uni-passau.de>
  *     Georg Seibt <seibt@fim.uni-passau.de>
+ *     Fengmin Zhu <zfm17@mails.tsinghua.edu.cn>
  */
 import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.grgit.operation.BranchAddOp
-import org.gradle.api.tasks.wrapper.Wrapper
-import org.gradle.api.tasks.wrapper.Wrapper.DistributionType;
 
 plugins {
     id 'application'
@@ -80,26 +78,14 @@ dependencies {
     compile 'de.uni-passau.fim.seibt:kvconfig:1.0'
     compile project(':JNativeMerge')
     compile files('lib/extendj.jar')
-    testCompile 'junit:junit:4.12'
 
     compile 'org.scala-lang:scala-library:2.12.4'
 }
-
-task wrapper(type: Wrapper) {
-    distributionType DistributionType.ALL
-    gradleVersion '4.4'
-}
-
-def testFilesDir = new File(rootProject.buildDir, 'jdime-testfiles')
 
 license {
     header rootProject.file('LICENSE_HEADER')
     mapping("fxml", "XML_STYLE")
     strictCheck true
-
-    fileTree(testFilesDir).visit {
-        exclude it.getRelativePath().getPathString()
-    }
 
     exclude "de/fosd/jdime/matcher/unordered/assignmentProblem/HungarianAlgorithm.java"
 }
@@ -111,8 +97,8 @@ idea {
     }
 }
 
-def loggingConfigFile = file('JDimeLogging.properties')
-def configFile = file('JDime.properties')
+def loggingConfigFile = file('AutoMergeLogging.properties')
+def configFile = file('AutoMerge.properties')
 
 def defaultOpts = ["-Xmx2048m", "-ea"]
 
@@ -167,72 +153,14 @@ distributions.with {
 }
 
 installDist {
-
     if (project.hasProperty('distDir')) {
         destinationDir = file(project.property('distDir'))
     }
 }
 
 run {
-    main = 'de.fosd.jdime.gui.GUI'
+    main = 'de.fosd.jdime.Main'
 }
-
-test {
-    systemProperty "java.util.logging.config.file", loggingConfigFile.getAbsolutePath()
-    maxHeapSize = '2048m'
-    enableAssertions = true
-}
-
-task getTestFiles {
-    def testFilesBranchName = "feature/extendj_update"
-    def gitURI = "https://github.com/se-passau/jdime-testfiles.git"
-
-    description = "Clones (or pulls) the JDime test files repository from GitHub."
-    group = 'verification'
-
-    sourceSets {
-        test {
-            resources {
-                srcDir testFilesDir
-            }
-        }
-    }
-
-    onlyIf {
-        if (!testFilesDir.exists()) { // Execute the task if the test files directory does not exist.
-            return true
-        }
-
-        def grgit = Grgit.open(dir: testFilesDir)
-        grgit.fetch()
-
-        if (grgit.resolve.toBranch(testFilesBranchName) == null) {
-            grgit.branch.add(name: testFilesBranchName, startPoint: "origin/$testFilesBranchName",
-                             mode: BranchAddOp.Mode.TRACK)
-        }
-
-        def status = grgit.branch.status(name: testFilesBranchName)
-
-        grgit.checkout(branch: testFilesBranchName)
-        grgit.close()
-
-        return status.behindCount != 0 // Execute the task if the existing test files are not up to date.
-    }
-
-    doLast {
-        if (testFilesDir.exists()) {
-            def grgit = Grgit.open(dir: testFilesDir)
-
-            grgit.checkout(branch: testFilesBranchName)
-            grgit.merge(head: "origin/$testFilesBranchName")
-            grgit.close()
-        } else {
-            Grgit.clone(dir: testFilesDir, refToCheckout: testFilesBranchName, uri: gitURI).close()
-        }
-    }
-}
-
-test.dependsOn getTestFiles
 
 compileJava {
     options.compilerArgs << "-Xlint:all"

@@ -71,7 +71,7 @@ public final class Main {
      * Values used for configuring the <code>LogManager</code> in {@link #readLoggingConfig()}.
      */
     private static final String LOGGING_CONFIG_FILE_PROPERTY = "java.util.logging.config.file";
-    private static final String LOGGING_CONFIG_FILE = "JDimeLogging.properties";
+    private static final String LOGGING_CONFIG_FILE = "AutoMergeLogging.properties";
     private static final String DEFAULT_LOGGING_CONFIG_FILE = "DefaultLogging.properties";
 
     static {
@@ -86,8 +86,8 @@ public final class Main {
         LOG = Logger.getLogger(Main.class.getCanonicalName());
     }
 
-    public static final String TOOLNAME = "jdime";
-    public static final String VERSION = "0.4.3.2";
+    public static final String TOOLNAME = "AutoMerge";
+    public static final String VERSION = "1.0";
 
     private static final String MODE_LIST = "list";
 

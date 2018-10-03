@@ -57,7 +57,7 @@ public final class JDimeConfig extends Config {
     /**
      * The file name of the JDime configuration file.
      */
-    private static final String CONFIG_FILE_NAME = "JDime.properties";
+    private static final String CONFIG_FILE_NAME = "AutoMerge.properties";
 
     /**
      * Whether to filter out any <code>FileArtifact</code>s not representing java source code files or directories

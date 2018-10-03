@@ -1,6 +1,6 @@
 import java.nio.file.Paths
 
-rootProject.name = 'JDime'
+rootProject.name = 'AutoMerge'
 
 def jNativeMergeName = 'JNativeMerge'
 def jNativeMergeBranch = 'master'

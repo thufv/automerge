@@ -129,30 +129,6 @@ public class CommandLineConfigSource extends ConfigSource {
     public static final String CLI_MAPPER_2 = "M2";
 
     /**
-     * Mapper 3.
-     * -M3, --mapper-3
-     *
-     * @author paul
-     */
-    public static final String CLI_MAPPER_3 = "M3";
-
-    /**
-     * Enable original ordered merge algorithm.
-     * -oo, --original-ordered
-     *
-     * @author paul
-     */
-    public static final String CLI_ORI_ORDERED = "or";
-
-    /**
-     * Enable original unordered merge algorithm.
-     * -ou, --original-unordered
-     *
-     * @author paul
-     */
-    public static final String CLI_ORI_UNORDERED = "ou";
-
-    /**
      * Likelihood for unordered merge algorithm.
      * -l, --likelihood
      *
@@ -489,35 +465,10 @@ public class CommandLineConfigSource extends ConfigSource {
 
         synthesisOptions.addOption(o);
 
-        o = Option.builder(CLI_MAPPER_3)
-                .longOpt("mapper-3")
-                .desc("Enable mapper 3.")
-                .hasArg(true)
-                .argName("on|off")
-                .build();
-
-        synthesisOptions.addOption(o);
-
         options.addOptionGroup(synthesisOptions);
 
         // Option group for merge algorithm parameters.
         OptionGroup mergeOptions = new OptionGroup();
-
-        o = Option.builder(CLI_ORI_ORDERED)
-                .longOpt("original-ordered")
-                .desc("Enable original ordered merge.")
-                .hasArg(false)
-                .build();
-
-        mergeOptions.addOption(o);
-
-        o = Option.builder(CLI_ORI_UNORDERED)
-                .longOpt("original-unordered")
-                .desc("Enable original unordered merge.")
-                .hasArg(false)
-                .build();
-
-        mergeOptions.addOption(o);
 
         o = Option.builder(CLI_LIKELIHOOD)
                 .longOpt("likelihood")
