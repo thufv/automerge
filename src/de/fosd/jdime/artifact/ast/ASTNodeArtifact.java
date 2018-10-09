@@ -1,25 +1,28 @@
 /**
+ * AutoMerge
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- * <p>
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * <p>
- * This library is distributed in the hope that it will be useful,
+ * Copyright (C) 2018-2019 Fengmin Zhu
+ * Copyright (C) 2019-2020 Tsinghua University
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * <p>
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
- * <p>
+ * License along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
  * Contributors:
  * Olaf Lessenich <lessenic@fim.uni-passau.de>
  * Georg Seibt <seibt@fim.uni-passau.de>
+ * Fengmin Zhu <zfm17@mails.tsinghua.edu.cn>
  */
 package de.fosd.jdime.artifact.ast;
 
@@ -221,7 +224,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Check if this ASTNodeArtifact is an empty artifact, say, created by calling `createEmptyArtifact`.
      *
      * @return this is an empty artifact
-     * @author paul
+     * @author Fengmin Zhu
      */
     public boolean isEmptyArtifact() {
         return dumpString().equals(EMPTY_ARTIFACT_DUMP_STRING);
@@ -573,7 +576,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Check if this ASTNode is of type `List`.
      *
      * @return whether it is of type `List`
-     * @author paul
+     * @author Fengmin Zhu
      */
     @Override
     public boolean isList() {
@@ -584,7 +587,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Check if this ASTNode is of type `Block`.
      *
      * @return whether it is of type `Block`
-     * @author paul
+     * @author Fengmin Zhu
      */
     public boolean isBlock() {
         return getASTNode() instanceof org.extendj.ast.Block;
@@ -644,7 +647,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Check if the artifact has conflict.
      *
      * @return has conflict
-     * @author paul
+     * @author Fengmin Zhu
      */
     public boolean hasConflict() {
         if (isConflict()) {
@@ -662,7 +665,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Collect conflict nodes.
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public List<ASTNodeArtifact> collectConflictNodes() {
         List<ASTNodeArtifact> nodes = new ArrayList<>();
@@ -682,7 +685,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     /**
      * Print conflict (if this artifact has conflict).
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public void printConflict() {
         System.out.println("--- left ---");
@@ -878,7 +881,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
      * Get kind name.
      *
      * @return
-     * @author paul
+     * @author Fengmin Zhu
      */
     public String kind(String parentName) {
         // Special case: the method name of `MethodAccess` is excluded in children, instead,

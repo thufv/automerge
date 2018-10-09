@@ -73,8 +73,6 @@ dependencies {
 
 license {
     header rootProject.file('LICENSE_HEADER')
-    mapping("fxml", "XML_STYLE")
-    strictCheck true
 
     exclude "de/fosd/jdime/matcher/unordered/assignmentProblem/HungarianAlgorithm.java"
 }

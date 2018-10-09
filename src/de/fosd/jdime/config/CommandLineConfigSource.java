@@ -1,25 +1,28 @@
 /**
+ * AutoMerge
  * Copyright (C) 2013-2014 Olaf Lessenich
  * Copyright (C) 2014-2017 University of Passau, Germany
- * <p>
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * <p>
- * This library is distributed in the hope that it will be useful,
+ * Copyright (C) 2018-2019 Fengmin Zhu
+ * Copyright (C) 2019-2020 Tsinghua University
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * <p>
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
- * <p>
+ * License along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
  * Contributors:
  * Olaf Lessenich <lessenic@fim.uni-passau.de>
  * Georg Seibt <seibt@fim.uni-passau.de>
+ * Fengmin Zhu <zfm17@mails.tsinghua.edu.cn>
  */
 package de.fosd.jdime.config;
 
@@ -76,7 +79,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Expected artifact.
      * -e, --expected
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_EXPECTED = "e";
 
@@ -84,7 +87,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Temporary folder.
      * -t, --tmp
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_TMP_FOLDER = "t";
 
@@ -92,7 +95,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Apply synthesis when conflicts occur.
      * -s, --synthesis
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_SYNTHESIS = "S";
 
@@ -100,7 +103,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Top `k`.
      * -K, --top-k
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_TOP_K = "K";
 
@@ -108,7 +111,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Disable ranking.
      * -noR, --no-ranking
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_NO_RANKING = "noR";
 
@@ -116,7 +119,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Mapper 1.
      * -M1, --mapper-1
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_MAPPER_1 = "M1";
 
@@ -124,7 +127,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Mapper 2.
      * -M2, --mapper-2
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_MAPPER_2 = "M2";
 
@@ -132,7 +135,7 @@ public class CommandLineConfigSource extends ConfigSource {
      * Likelihood for unordered merge algorithm.
      * -l, --likelihood
      *
-     * @author paul
+     * @author Fengmin Zhu
      */
     public static final String CLI_LIKELIHOOD = "l";
 
