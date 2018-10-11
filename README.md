@@ -11,7 +11,7 @@ _Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Vers
 
 Software merge is a central task of version control system-guided development:
 two developers create their own versions by deriving it from a common ancestor version; then these two versions evolve independently by either adding new functionalities or fixing previous issues; finally these two versions are merged again.
-In a [three-way merge](https://en.wikipedia.org/wiki/Merge_(version_control)){:target="_blank"}
+In a [three-way merge](https://en.wikipedia.org/wiki/Merge_(version_control))
 scenario, 
 the two versions to be merged are called the _left_ version and the _right_ version,
 and their common ancestor is called the _base_ version.
