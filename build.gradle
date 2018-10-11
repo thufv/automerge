@@ -1,26 +1,28 @@
-/*
+/**
+ * AutoMerge
  * Copyright (C) 2013-2014 Olaf Lessenich
- * Copyright (C) 2014-2015 University of Passau, Germany
+ * Copyright (C) 2014-2017 University of Passau, Germany
+ * Copyright (C) 2018-2019 Fengmin Zhu
+ * Copyright (C) 2019-2020 Tsinghua University
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301  USA
+ * License along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
  *
  * Contributors:
- *     Olaf Lessenich <lessenic@fim.uni-passau.de>
- *     Georg Seibt <seibt@fim.uni-passau.de>
- *     Fengmin Zhu <zfm17@mails.tsinghua.edu.cn>
+ * Olaf Lessenich <lessenic@fim.uni-passau.de>
+ * Georg Seibt <seibt@fim.uni-passau.de>
+ * Fengmin Zhu <zfm17@mails.tsinghua.edu.cn>
  */
 import org.ajoberstar.grgit.Grgit
 
@@ -137,4 +139,54 @@ run {
 
 compileJava {
     options.compilerArgs << "-Xlint:all"
+}
+
+def version = '1.0'
+
+task buildJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Version': version,
+                   'Main-Class': 'de.fosd.jdime.Main'
+    }
+    baseName = 'AutoMerge'
+    destinationDir = file('build/pack')
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task pack(dependsOn: [buildJar]) {
+    copy {
+        from project.projectDir, {
+            include configFile.name
+
+            def getHeadCommit = {
+                def grgit = Grgit.open(dir: project.projectDir)
+                def head = grgit.head()
+
+                grgit.close()
+                head.id
+            }
+
+            expand([
+                    commit: getHeadCommit()
+            ])
+        }
+        from project.projectDir, {
+            include loggingConfigFile.name
+        }
+        into 'build/pack'
+    }
+}
+
+task demo(type: Exec, dependsOn: installDist) {
+    // on linux
+    commandLine './demo.sh'
+
+    // store the output instead of printing to the console
+    standardOutput = new ByteArrayOutputStream()
+
+    // extension method stopTomcat.output() can be used to obtain the output:
+    ext.output = {
+        return standardOutput.toString()
+    }
 }

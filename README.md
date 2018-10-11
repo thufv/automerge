@@ -10,15 +10,45 @@ _Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Vers
 ## System Requirements
 
 * JDK8 + JavaFX
-* git (http://git-scm.com/)
-* libgit2 (https://libgit2.github.com/)
-* gradle
+* [git](http://git-scm.com/)
+* [libgit2](https://libgit2.github.com/)
+* [gradle](https://gradle.org)
 
-Installing `libgit2` on Linux:
+Installing libgit2 on Linux:
 - Debian/Ubuntu: `apt-get install git libgit2-dev`
 - Redhat/Fedora: `dnf install git libgit2`
 - Suse/OpenSuse: `zypper install git libgit2`
 - FreeBSD: `pkg install git openjfx8-devel libgit2`
+
+## Build & Test
+
+The simplest way to build and run AutoMerge is 
+
+```bash
+gradle run --args='<options>'
+```
+
+Without any options, say `gradle run`, AutoMerge prints the usage.
+To normally launch AutoMerge,
+you need to combine the CLI options and arguments as a string `'<options>'` 
+and pass it as the argument for the gradle option `--args`, i.e. `--args='<options>'`.
+
+To launch a demo, simply type `gradle demo` and have a look at the output logs.
+Alternatively, you may first build by `gradle installDist` and then execute the helper script
+to perform a merge by providing the three-way merge scenario (base, left, right)
+and the output path. The expected result is optional:
+
+```bash
+./test.sh <left> <base> <right> <output> [<expected>]
+```
+
+## Packing
+
+For further usage of AutoMerge, we recommend you to generate a standalone jar by typing
+`gradle pack`. You will find the standalone jar in `build/pack/AutoMerge.jar`.
+Change directory to `build/pack` and execute the jar with `java -jar AutoMerge.jar ...`.
+
+## Basic Usage
 
 ## Further Information
 
