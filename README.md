@@ -58,7 +58,7 @@ to perform a merge by providing the three-way merge scenario (base, left, right)
 and the output path. The expected result is optional:
 
 ```bash
-./test.sh <left> <base> <right> <output> [<expected>]
+./demo.sh <left> <base> <right> <output> [<expected>]
 ```
 
 ## Packing
