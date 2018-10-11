@@ -26,15 +26,15 @@
  */
 package de.fosd.jdime.config;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
 import de.fosd.jdime.matcher.cost_model.CMMode;
 import de.fosd.jdime.strategy.MergeStrategy;
 import de.fosd.jdime.strdump.DumpMode;
 import de.uni_passau.fim.seibt.kvconfig.sources.ConfigSource;
 import org.apache.commons.cli.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * A <code>ConfigSource</code> backed by a <code>CommandLine</code> instance. Its {@link #getMapping(String)} method
@@ -93,7 +93,7 @@ public class CommandLineConfigSource extends ConfigSource {
 
     /**
      * Apply synthesis when conflicts occur.
-     * -s, --synthesis
+     * -S, --synthesis
      *
      * @author Fengmin Zhu
      */
@@ -131,13 +131,16 @@ public class CommandLineConfigSource extends ConfigSource {
      */
     public static final String CLI_MAPPER_2 = "M2";
 
+
     /**
-     * Likelihood for unordered merge algorithm.
-     * -l, --likelihood
+     * Measure program space.
+     * -PS, --program-space
      *
-     * @author Fengmin Zhu
+     * Evaluation only!
+     *
+     * @author paul
      */
-    public static final String CLI_LIKELIHOOD = "l";
+    public static final String CLI_PROGRAM_SPACE = "PS";
 
     public static final String ARG_LIST = "ARG_LIST";
     public static final String ARG_LIST_SEP = ",";
@@ -431,16 +434,13 @@ public class CommandLineConfigSource extends ConfigSource {
 
         options.addOption(o);
 
-        // Option group for synthesis parameters.
-        OptionGroup synthesisOptions = new OptionGroup();
-
         o = Option.builder(CLI_TOP_K)
                 .longOpt("top-k")
                 .desc("Check top k ranked programs in systhesis phase, default 32.")
                 .hasArg(true)
                 .build();
 
-        synthesisOptions.addOption(o);
+        options.addOption(o);
 
         o = Option.builder(CLI_NO_RANKING)
                 .longOpt("no-ranking")
@@ -448,41 +448,33 @@ public class CommandLineConfigSource extends ConfigSource {
                 .hasArg(false)
                 .build();
 
-        synthesisOptions.addOption(o);
+        options.addOption(o);
 
         o = Option.builder(CLI_MAPPER_1)
                 .longOpt("mapper-1")
-                .desc("Enable mapper 1.")
+                .desc("Enable/disable mapper 1, default on.")
                 .hasArg(true)
                 .argName("on|off")
                 .build();
 
-        synthesisOptions.addOption(o);
+        options.addOption(o);
 
         o = Option.builder(CLI_MAPPER_2)
                 .longOpt("mapper-2")
-                .desc("Enable mapper 2.")
+                .desc("Enable/disable mapper 2, default off.")
                 .hasArg(true)
                 .argName("on|off")
                 .build();
 
-        synthesisOptions.addOption(o);
+        options.addOption(o);
 
-        options.addOptionGroup(synthesisOptions);
-
-        // Option group for merge algorithm parameters.
-        OptionGroup mergeOptions = new OptionGroup();
-
-        o = Option.builder(CLI_LIKELIHOOD)
-                .longOpt("likelihood")
-                .desc("Likelihood lower bound for unordered merge, default 0.1.")
-                .hasArg(true)
-                .argName("percentage")
+        o = Option.builder(CLI_PROGRAM_SPACE)
+                .longOpt("program-space")
+                .desc("Enable program space measurement mode, default off. (Just for experiment)")
+                .hasArg(false)
                 .build();
 
-        mergeOptions.addOption(o);
-
-        options.addOptionGroup(mergeOptions);
+        options.addOption(o);
 
         return options;
     }

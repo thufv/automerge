@@ -90,7 +90,7 @@ public final class Main {
     }
 
     public static final String TOOLNAME = "AutoMerge";
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.0 (based on JDime 0.4.3.2)";
 
     private static final String MODE_LIST = "list";
 

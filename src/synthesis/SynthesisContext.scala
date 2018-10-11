@@ -55,6 +55,8 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   abstract class Symbol {
     def programs: Stream[ASTNodeArtifact]
 
+    def size(history: Set[Symbol] = Set()): Int
+
     def uniqueID: String
 
     override def toString: String = uniqueID
@@ -112,6 +114,17 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       }
     }
 
+    override def size(history: Set[Symbol]): Int =
+      if (history.contains(this)) 1
+      else {
+        val right = grammar(this)
+        val symbols = right.symbols.toList
+        val subProgramsSizes = symbols.map(_.size(history + this))
+
+        if (!right.isList) subProgramsSizes.sum
+        else subProgramsSizes.product
+      }
+
     override def compare(that: NonTerm): Int = name compare that.name
 
     override def uniqueID: String = s"<$name>"
@@ -123,6 +136,8 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
     lazy val programs: Stream[ASTNodeArtifact] = {
       Stream(tree)
     }
+
+    override def size(history: Set[Symbol]): Int = 1
 
     override def uniqueID: String = s"${tree.dumpTree}"
   }
@@ -139,6 +154,10 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
         }
         .map(constructor)
     }
+
+    override def size(history: Set[Symbol]): Int =
+      if (history.contains(this)) 1
+      else children.map(_.size(history + this)).product
 
     override def uniqueID: String = s"$name(${children.mkString(", ")})"
   }
@@ -299,10 +318,9 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
     visitTree(right, start, Right, f(rightDepth, Right))
 
     def lt(s1: Set[Label], s2: Set[Label]): Boolean = {
-      val swap = (s2 == Set(Left) && s1.contains(Base) && s1.contains(Right)) ||
-        (s2 == Set(Right) && s1.contains(Base) && s1.contains(Left)) ||
-        (s2 == Set(Left, Right) && s1.contains(Base))
-      !swap
+      (s1 == Set(Left) && s2.contains(Base) && s2.contains(Right)) ||
+        (s1 == Set(Right) && s2.contains(Base) && s2.contains(Left)) ||
+        (s1 == Set(Left, Right) && s2.contains(Base))
     }
 
     if (Main.config.getBoolean(CLI_NO_RANKING).orElse(false)) LOG.config("Ranking is disabled.")
@@ -326,8 +344,29 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
   def take(k: Int): Unit = {
     programs.take(k).zipWithIndex.foreach {
       case (x, i) =>
-        LOG.fine(s"Synthesis: Candidate ${i + 1}:\n${x.prettyPrint}")
+        LOG.info(s"Synthesis: Candidate ${i + 1}:\n${x.prettyPrint}")
     }
+  }
+
+  def programSpaceSize: Int = {
+    val start = NonTerm("start")
+
+    val baseDepth = depthOf(base)
+    val leftDepth = depthOf(left)
+    val rightDepth = depthOf(right)
+    val D = Math.max(leftDepth, rightDepth)
+
+    def f(x: Int, label: Label): Int = {
+      val d = Math.max(maxDepth - (D - x), 2)
+      LOG.fine(s"Visit $label with max depth = $d")
+      d
+    }
+
+    visitTree(base, start, Base, f(baseDepth, Base))
+    visitTree(left, start, Left, f(leftDepth, Left))
+    visitTree(right, start, Right, f(rightDepth, Right))
+
+    start.size()
   }
 
   def check(expected: ASTNodeArtifact, maxk: Int = 32): javafx.util.Pair[java.lang.Boolean, Integer] = {
@@ -338,7 +377,12 @@ class SynthesisContext(val left: ASTNodeArtifact, val right: ASTNodeArtifact,
       else {
         val p = ps.head
         LOG.fine(s"Synthesis: Check $k:\n${p.prettyPrint}")
-        if (exp.eq(p)) Found(k)
+        if (exp.eq(p)) {
+          val depth = p.getMaxDepth
+          val size = p.getTreeSize
+          LOG.info(s"Synthesis: found a tree with depth = $depth, size = $size")
+          Found(k)
+        }
         else loop(ps.tail, k + 1)
       }
     }

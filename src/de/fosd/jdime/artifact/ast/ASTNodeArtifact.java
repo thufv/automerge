@@ -58,8 +58,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_MAPPER_1;
-import static de.fosd.jdime.config.CommandLineConfigSource.CLI_TOP_K;
+import static de.fosd.jdime.config.CommandLineConfigSource.*;
 import static de.fosd.jdime.strdump.DumpMode.PLAINTEXT_TREE;
 import static de.fosd.jdime.util.SuccessLevel.SUCCESS;
 import static java.util.logging.Level.SEVERE;
@@ -709,7 +708,29 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
         int maxK = config.getInteger(CLI_TOP_K).orElse(32);
 
         Optional<FileArtifact> expFile = context.getExpected(scenario);
-        if (expFile.isPresent()) {
+        if (Main.config.getBoolean(CLI_PROGRAM_SPACE).orElse(false)) { // measure P.S.
+            for (ASTNodeArtifact node : nodes) {
+                long startTime = System.currentTimeMillis();
+
+                int depth = 2;
+                int totalSteps = 0;
+
+                while (depth < 5) {
+                    SynthesisContext ctx = new SynthesisContext(node.left, node.right, node.base, LOG, depth);
+                    totalSteps += ctx.programSpaceSize();
+                    depth++;
+                }
+
+                long runtime = System.currentTimeMillis() - startTime;
+
+                LOG.info("Synthesis: Expected: <do not care>");
+                LOG.info("Synthesis: Searched depth: " + depth);
+                if (totalSteps < 0) totalSteps = 1024;
+                LOG.info("Synthesis: Searched total steps: " + Math.min(totalSteps, 1024));
+                LOG.log(SEVERE, "Synthesis: NOT FOUND");
+                LOG.info(String.format("Synthesis time: %d ms.", runtime));
+            }
+        } else if (expFile.isPresent()) {
             FileArtifact expected = expFile.get();
             ASTNodeArtifact expAST = new ASTNodeArtifact(expected);
 
@@ -891,7 +912,7 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
             return shortName() + "." + m.getID();
         }
 
-        if (Main.config.getBoolean(CLI_MAPPER_1).orElse(true)) {
+        if (Main.config.get(CLI_MAPPER_1).orElse("on").equals("on")) {
             if (astnode instanceof Block || astnode instanceof org.extendj.ast.List) {
                 return parentName + "." + shortName();
             }
@@ -903,12 +924,36 @@ public class ASTNodeArtifact extends Artifact<ASTNodeArtifact> {
     public String[] abstractArgumentNames(String parentName) {
         if (isList()) {
             String[] names = new String[1];
-            names[0] = kind(parentName) + ".arg.list";
+            names[0] = kind(parentName) + ".arg";
             return names;
         }
 
         int n = getNumChildren();
         String[] names = new String[n];
+
+        if (Main.config.get(CLI_MAPPER_2).orElse("off").equals("on")) {
+            if (astnode instanceof ArithmeticExpr) {
+                for (int i = 0; i < n; i++) {
+                    names[i] = "ArithmeticExpr" + ".arg";
+                }
+                return names;
+            }
+
+            if (astnode instanceof LogicalExpr) {
+                for (int i = 0; i < n; i++) {
+                    names[i] = "LogicalExpr" + ".arg";
+                }
+                return names;
+            }
+
+            if (astnode instanceof RelationalExpr) {
+                for (int i = 0; i < n; i++) {
+                    names[i] = "RelationalExpr" + ".arg";
+                }
+                return names;
+            }
+        }
+
         for (int i = 0; i < n; i++) {
             names[i] = kind(parentName) + ".arg" + i;
         }

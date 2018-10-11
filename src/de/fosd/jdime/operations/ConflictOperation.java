@@ -27,7 +27,6 @@
 package de.fosd.jdime.operations;
 
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import de.fosd.jdime.artifact.Artifact;
@@ -43,7 +42,7 @@ import de.fosd.jdime.config.merge.MergeContext;
 public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
 
     private static final Logger LOG = Logger.getLogger(ConflictOperation.class.getCanonicalName());
-
+    
     private T left;
     private T right;
     private T base;
@@ -72,45 +71,25 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
      *         the condition for the right alternative, may be {@code null}
      */
     public ConflictOperation(T left, T right, T target, String leftCondition, String rightCondition, T base) {
-        new ConflictOperation<>(left, right, target, leftCondition, rightCondition, base, true);
-    }
-
-    public ConflictOperation(T self, T other, T target, String cond1, String cond2, T base,
-                             boolean isLeft) {
         Objects.requireNonNull(target, "The parent for the conflict must not be null.");
 
-        if (isLeft) {
-            this.left = self;
-            this.right = other;
-        } else {
-            this.left = other;
-            this.right = self;
-        }
+        this.left = left;
+        this.right = right;
         this.base = base;
         this.target = target;
 
-        if (isLeft) {
-            if (leftCondition != null) {
-                this.leftCondition = cond1;
-            }
-            if (rightCondition != null) {
-                this.rightCondition = cond2;
-            }
-        } else {
-            if (leftCondition != null) {
-                this.leftCondition = cond2;
-            }
-            if (rightCondition != null) {
-                this.rightCondition = cond1;
-            }
+        if (leftCondition != null) {
+            this.leftCondition = leftCondition;
+        }
+
+        if (rightCondition != null) {
+            this.rightCondition = rightCondition;
         }
     }
 
     @Override
     public void apply(MergeContext context) {
-        if (LOG.isLoggable(Level.FINE)) {
-            LOG.warning(() -> "Applying: " + this);
-        }
+        LOG.fine(() -> "Applying: " + this);
 
         if (context.isConditionalMerge(left) && leftCondition != null && rightCondition != null) {
             LOG.fine("Creating a choice node.");
@@ -124,7 +103,7 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
 
             choice.addVariant(rightCondition, right);
             target.addChild(choice);
-        } else if (target != null) {
+        } else {
             LOG.fine("Creating a conflict node.");
             target.addChild(target.createConflictArtifact(left, right, base));
         }
@@ -134,7 +113,7 @@ public class ConflictOperation<T extends Artifact<T>> extends Operation<T> {
     public final String toString() {
         String lId = left != null ? left.getId() : "NONE";
         String rId = right != null ? right.getId() : "NONE";
-        String tId = target != null ? target.getId(): "NONE";
+        String tId = target.getId();
 
         if (leftCondition == null && rightCondition == null) {
             return String.format("%s: BETWEEN %s AND %s UNDER %s", getId(), lId, rId, tId);
