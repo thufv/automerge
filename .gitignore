@@ -176,7 +176,3 @@ local.properties
 
 # TeXlipse plugin
 .texlipse
-
-MYTEST/
-*.sh
-
