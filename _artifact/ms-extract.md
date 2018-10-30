@@ -34,4 +34,26 @@ say at least one conflict exhibits.
 
 ### Usage of Script
 
-<!-- TODO: Use ase-experiment/commits.py. -->
+In some working directory `dir/`, first create a new subdirectory `projects/`, 
+and move the repositories into `projects/`. 
+Each repository must be a folder and we access the repository by the name of the folder.
+
+Then copy the [script]() into directory `dir/`.
+In `dir/`, type `./commits repos...` to extract commits of 
+a list of repositories (providing their folder names as the CLI arguments).
+
+The extracted commits will be saved into `dir/commits/`. The folder structure is like the following:
+
+```
+commits/
+    repo1/
+        commit1_hash/
+            base/
+            left/
+            right/
+            expected/
+        ... (other commits)
+    ... (other repos)
+```
+
+The script itself is not complicated and you may customize it to meet your needs.
