@@ -42,4 +42,5 @@ automerge-artifact/                # project root
     run-conflicts.py               # experiments launcher
     stat-conflicts.py              # log processer and raw results generator
     gen-tables.py                  # final results generator
+    commits.py                     # commits extractor
 ```

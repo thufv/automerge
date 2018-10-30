@@ -29,7 +29,7 @@ readers can reproduce the key experiments easily.
 For details, visit
 <a href="{{ '/docs/ms-extract' | prepend: site.baseurl }}">Merge Scenario Extraction</a>.
 In the reproducing package,
-we also provide a sample script `ms-extract.py` for extracting merge scenarios.
+we also provide a sample script `commits.py` for extracting merge scenarios.
 
 #### 2. Analysis on Failure Cases
 

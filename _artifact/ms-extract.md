@@ -26,8 +26,8 @@ and two parent commits as the left and right versions.
 In fact, these three versions form a merge scenario.
 Additionally, the merge commit itself is marked as the expected version
 with respect to the merge scenario.
-4. Not all of the merge commits are interesting.
-Some of them can be fully merged by structured merge
+4. Not all of the merge commits are "interesting":
+some of them can be fully merged by structured merge
 and thus it is unnecessary to apply our conflict resolution approach on these merge scenarios.
 Instead, we only concentrate on merge commits that cannot be fully merged by `JDime`,
 say at least one conflict exhibits.
@@ -38,7 +38,8 @@ In some working directory `dir/`, first create a new subdirectory `projects/`,
 and move the repositories into `projects/`. 
 Each repository must be a folder and we access the repository by the name of the folder.
 
-Then copy the [script]() into directory `dir/`.
+Then copy the [script](https://github.com/thufv/automerge/blob/artifact/commits.py){:target="_blank"}
+into directory `dir/`.
 In `dir/`, type `./commits repos...` to extract commits of 
 a list of repositories (providing their folder names as the CLI arguments).
 
@@ -57,3 +58,11 @@ commits/
 ```
 
 The script itself is not complicated and you may customize it to meet your needs.
+When using the script, please note that:
+- Non-Java files will be excluded in the commit, as `JDime` only support Java.
+- The script only extracts a bunch of commits. If you want to perform a merge by `AutoMerge`,
+please use the scripts provided in this package.
+Also, the last step of extraction, i.e. filter "interesting" commits, cannot be done by the script.
+In fact, you may launch the entire experiment simply on these extracted commits,
+and then you analyze the results and you could conclude that 
+how many of the merge scenarios were not solved by only the structured merge.
