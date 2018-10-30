@@ -9,7 +9,7 @@ We would like to thank the anonymous reviewers of the AEC track for useful feedb
 **Q:** JDK version is incompatible.
 
 **A:** Use JDK8.
-<br/>
+<br/><br/>
 
 **Q:** Library `libgit2` not found.
 
@@ -17,7 +17,7 @@ We would like to thank the anonymous reviewers of the AEC track for useful feedb
 On Mac, you may use `homebrew` to install it: `brew install libgit2`.
 On Windows, you may have to compile and install it by yourself: 
 [libgit2](https://github.com/libgit2/libgit2){:target="_blank"}.
-<br/>
+<br/><br/>
 
 **Q:** On Ubuntu 17.10, I encounter the following exception:
 ```
@@ -30,4 +30,4 @@ java.lang.NoClassDefFoundError: javafx/util/Pair
 
 **A:** You have to install
 [openjfx](http://openjdk.java.net/projects/openjfx/getting-started.html){:target="_blank"}.
-<br/>
+<br/><br/>

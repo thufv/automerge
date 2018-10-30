@@ -31,25 +31,27 @@ exclude:
 timezone: Europe/Berlin
 defaults:
 - scope:
-    path: _posts
-    type: posts
+    path: _install
+    type: install
   values:
-    layout: post
-    sectionid: blog
+    layout: install
+    sectionid: install
+    seo:
+      type: "WebPage"
 
 - scope:
-    path: _docs
-    type: docs
+    path: _artifact
+    type: artifact
   values:
-    layout: docs
-    sectionid: docs
+    layout: artifact
+    sectionid: artifact
     seo:
       type: "WebPage"
 
 collections:
-  docs:
+  install:
     permalink: /:collection/:path/
     output: true
-  posts:
-    permalink: /blog/:year/:month/:day/:title/
+  artifact:
+    permalink: /:collection/:path/
     output: true

@@ -1,11 +1,11 @@
 - title: AutoMerge
+  collection: install
   docs:
   - home
   - install
-  - usage
-  - options
 
-- title: Reproducing
+- title: Artifact
+  collection: artifact
   docs:
   - artifact
   - steps
