@@ -2,7 +2,8 @@
 
 This the reproducing package for the paper
 
-_Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Version Space Algebra. Proc. ACM Program. Lang. 2, OOPSLA, Article 166 (November 2018)._
+_Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Version Space Algebra. Proc. ACM Program. Lang. 2, OOPSLA, Article 166 (November 2018), 25 pages._
+[Download via DOI](https://doi.org/10.1145/3276536)
 
 ## Folder Structure
 
@@ -11,8 +12,8 @@ automerge-artifact/		# project root
     commits/			# extracted commits (i.e. merge scenarios)
     bin/				# executable files
         AutoMerge.jar 				# our tool
-        JDime.properties 			# JDime properties
-        JDimeLogging.properties  	# logger properties
+        AutoMerge.properties 			# properties
+        AutoMergeLogging.properties  	# logger properties
         tmp.java        			# temporary file
         test.sh 					# sample launcher
     outputs/			# output files
@@ -25,6 +26,7 @@ automerge-artifact/		# project root
     run-conflicts.py 	# experiments launcher
     stat-conflicts.py 	# log processor and raw results generator
     gen-tables.py 		# final results generator
+    commits.py          # merge commits extractor
 ```
 
 
@@ -86,4 +88,7 @@ In `outputs/release`, we provide the evaluation results produced by our machine.
 
 ## Further Information
 
-For further information, please visit [AutoMerge's webpage](https://thufv.github.io/automerge/).
+Please visit [AutoMerge's website](https://thufv.github.io/automerge/) for
+
+- [More explanation on reproducing](https://thufv.github.io/automerge/docs/steps/)
+- [Merge scenario extraction](https://thufv.github.io/automerge/docs/ms-extract/)
