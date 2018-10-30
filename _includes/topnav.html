@@ -8,7 +8,9 @@
         <span class="icon-bar"></span>
       </button>
             <a class="navbar-brand" href="{{ site.baseurl }}/">
-                <span><img src="{{site.baseurl}}/img/logonav.png"></span> {{ site.title }}
+                <span>
+                    <img src="{{site.baseurl}}/img/logonav.png" style="margin-right:10px;">
+                </span> {{ site.title }}
             </a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
@@ -20,12 +22,9 @@
                 <form class="navbar-form navbar-left">
                     <div class="form-group has-feedback">
                         <input id="search-box" type="text" class="form-control" placeholder="Search...">
-                        <i class="fa fa-search form-control-feedback"></i>
+                        <i class="fa fa-search form-control-feedback" aria-hidden="true" style="font-size:x-large;"></i>
                     </div>
                 </form>
-                <ul class="nav navbar-nav">
-                    <li><a href="{{ site.git_address }}"><i class="fa fa-github" aria-hidden="true"></i></a></li>
-                </ul>
             </div>
         </div>
     </div>
