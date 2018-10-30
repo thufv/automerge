@@ -4,8 +4,8 @@ This project is built on the top of [JDime](https://github.com/se-passau/jdime).
 
 For technical details of our approach, please read our paper:
 
-_Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Version Space Algebra. Proc. ACM Program. Lang. 2, OOPSLA, Article 166 (November 2018)._
-(will be published in Nov.)
+_Fengmin Zhu and Fei He. 2018. Conflict Resolution for Structured Merge via Version Space Algebra. Proc. ACM Program. Lang. 2, OOPSLA, Article 166 (November 2018), 25 pages._
+[Download via DOI](https://doi.org/10.1145/3276536)
 
 ## Background
 
@@ -40,6 +40,8 @@ Installing libgit2 on Linux:
 - FreeBSD: `pkg install git openjfx8-devel libgit2`
 
 ## Build & Test
+
+You may find pre-built versions in [releases](https://github.com/thufv/automerge/releases).
 
 The simplest way to build and run AutoMerge is 
 
