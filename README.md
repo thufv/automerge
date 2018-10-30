@@ -127,6 +127,29 @@ Options for mappers and ranking:
 
 These options are set for the experiment shown in Section 6.3 of our paper.
 
+
+### Log Levels
+
+The recommended log level is `INFO`, which shows useful information on synthesis results.
+Set log level with option `-log <level>`, possible levels are 
+(from the least output to the most output):
+
+- `OFF`: No logs.
+- `SEVERE`: Error messages only.
+- `WARNING`: Warning messages.
+- `INFO`: Useful execution results.
+- `CONFIG`: Command line configuration information.
+- `FINE`, `FINER`, `FINEST`: Debug information in different levels.
+
+A colorful logger is enabled by specifying
+`de.fosd.jdime.handlers=de.fosd.jdime.util.ColorConsoleHandler`
+in `AutoMergeLogging.properties` (and make sure this file is in the same directory of the jar file).
+However, to reproduce our experiments, please use the plain logger:
+`de.fosd.jdime.handlers=java.util.logging.ConsoleHandler`.
+
+Unmentioned options are inherited from `JDime`, 
+type `java -jar AutoMerge.jar` for more information.
+
 ## Further Information
 
 For further information, please visit our [webpage](https://thufv.github.io/automerge).
